@@ -33,7 +33,7 @@ double getAvail(Parameters& params, std::string currency) {
   return 0.0;
 }
 
-double getActivePos(Parameters& params) {
+double getActivePos(Parameters& params, std::string orderId) {
   // TODO
   return 0.0;
 }

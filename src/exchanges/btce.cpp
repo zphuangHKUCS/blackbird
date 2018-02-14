@@ -87,7 +87,7 @@ bool isOrderComplete(Parameters& params, std::string orderId)
   return json_object_get(root.get(), orderId.c_str()) == nullptr;
 }
 
-double getActivePos(Parameters& params)
+double getActivePos(Parameters& params, std::string orderId)
 {
   // TODO:
   // this implementation is more of a placeholder copied from other exchanges;

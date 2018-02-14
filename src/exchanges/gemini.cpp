@@ -95,7 +95,7 @@ bool isOrderComplete(Parameters& params, std::string orderId) {
   return json_is_false(json_object_get(root.get(), "is_live"));
 }
 
-double getActivePos(Parameters& params) {
+double getActivePos(Parameters& params, std::string orderId) {
   return getAvail(params, "btc");
 }
 

@@ -13,7 +13,7 @@ quote_t getQuote(Parameters& params);
 
 double getAvail(Parameters& params, std::string currency);
 
-double getActivePos(Parameters& params);
+double getActivePos(Parameters& params, std::string orderId="");
 
 double getLimitPrice(Parameters& params, double volume, bool isBid);
 

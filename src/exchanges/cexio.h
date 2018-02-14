@@ -22,7 +22,7 @@ std::string sendOrder(Parameters& params, std::string direction, double quantity
 
 bool isOrderComplete(Parameters& params, std::string orderId);
 
-double getActivePos(Parameters& params);
+double getActivePos(Parameters& params, std::string orderId="");
 
 double getLimitPrice(Parameters& params, double volume, bool isBid);
 

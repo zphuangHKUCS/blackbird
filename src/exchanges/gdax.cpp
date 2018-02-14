@@ -68,7 +68,7 @@ double getAvail(Parameters &params, std::string currency)
   return available;
 }
 
-double getActivePos(Parameters &params)
+double getActivePos(Parameters &params, std::string orderId)
 {
   // TODO: this is not really a good way to get active positions
   return getAvail(params, "BTC");

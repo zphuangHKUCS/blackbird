@@ -151,7 +151,7 @@ bool isOrderComplete(Parameters& params, std::string orderId)
   return tmp;  
 }
 
-double getActivePos(Parameters& params) {
+double getActivePos(Parameters& params, std::string orderId) {
     return getAvail(params, "BTC");
 }
 
