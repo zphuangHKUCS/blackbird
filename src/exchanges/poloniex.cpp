@@ -95,6 +95,7 @@ bool isOrderComplete(Parameters& params, std::string orderId)
 }
 
 double getActivePos(Parameters& params, std::string orderId) {
+  double activeSize = 0.0;
   if (!orderId.empty()){
     std::string options = "orderNumber=";
     options += orderId;
