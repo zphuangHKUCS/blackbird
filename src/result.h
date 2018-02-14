@@ -28,11 +28,11 @@ struct Result {
   double spreadOut;
   double exitTarget;
   // FIXME: the arrays should have a dynamic size
-  double minSpread[10][10];
-  double maxSpread[10][10];
-  double trailing[10][10];
-  unsigned trailingWaitCount[10][10];
-  std::list<double> volatility[10][10];
+  double minSpread;
+  double maxSpread;
+  double trailing;
+  unsigned trailingWaitCount;
+  std::list<double> volatility;
   double leg2TotBalanceBefore;
   double leg2TotBalanceAfter;
 
@@ -48,14 +48,9 @@ struct Result {
   
   // Resets the structures
   void reset();
-  
-  // Tries to load the state from a previous position
-  // from the restore.txt file.
-  bool loadPartialResult(std::string filename);
-  
-  // Saves the state from a previous position
-  // into the restore.txt file.
-  void savePartialResult(std::string filename);
+
+  //FIXME: Bad way of doing what I'm trying to accomplish
+  void removePair(std::vector<Result>& vec, int id);
 };
 
 #endif
