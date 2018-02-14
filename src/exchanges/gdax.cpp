@@ -70,8 +70,15 @@ double getAvail(Parameters &params, std::string currency)
 
 double getActivePos(Parameters &params, std::string orderId)
 {
-  // TODO: this is not really a good way to get active positions
-  return getAvail(params, "BTC");
+  double activeSize = 0.0;
+  if (!orderId.empty())
+  {
+    std::string uri = "/orders/";
+    uri += orderId.c_str();
+    unique_json root{authRequest(params, "GET", uri, "")};
+    activeSize = atof(json_string_value(json_object_get(root.get(), "size")));
+  }
+  return activeSize;
 }
 
 double getLimitPrice(Parameters &params, double volume, bool isBid)

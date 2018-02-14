@@ -152,7 +152,16 @@ bool isOrderComplete(Parameters& params, std::string orderId)
 }
 
 double getActivePos(Parameters& params, std::string orderId) {
-    return getAvail(params, "BTC");
+  double activeSize = 0.0;
+  if (!orderId.empty()){
+    std::string uri = "/api/v1.1/account/getorder";
+    std::string builder = "uuid=";
+    builder += orderId.c_str();
+    unique_json root {authRequest(params, uri, builder) };
+    activeSize = json_number_value(json_object_get(json_object_get(root.get(), "result"),"Quantity"));
+  }
+  return activeSize;
+
 }
 
 double getLimitPrice(Parameters& params, double volume, bool isBid) {

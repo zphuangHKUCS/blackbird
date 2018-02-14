@@ -168,7 +168,18 @@ bool isOrderComplete(Parameters &params, std::string orderId)
 
 double getActivePos(Parameters &params, std::string orderId)
 {
-  return getAvail(params, "btc");
+  double activeSize = 0.0;
+  if (!orderId.empty()){
+    std::string uri = "/0/private/QueryOrders";
+    std::string options = "txid=";
+    options += orderId;
+    unique_json root { authRequest(params, "/0/private/QueryOrders", options) };
+    auto result = json_object_get(root.get(),"result");
+    //SUGGEST: Pretty messy dude
+    std::string tmpord = orderId.c_str();
+    activeSize = atof(json_string_value(json_object_get(json_object_get(result,tmpord.c_str()),"vol")));
+  }
+  return activeSize;
 }
 
 double getLimitPrice(Parameters &params, double volume, bool isBid)
