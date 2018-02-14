@@ -31,6 +31,7 @@ struct Result {
   double spreadOut;
   double exitTarget;
   // FIXME: the arrays should have a dynamic size
+
   double minSpread;
   double maxSpread;
   double trailing;

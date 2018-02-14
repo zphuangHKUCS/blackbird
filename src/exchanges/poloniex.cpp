@@ -112,7 +112,6 @@ double getActivePos(Parameters& params, std::string orderId) {
     }
   }
   return activeSize;
-}
 
 double getLimitPrice(Parameters& params, double volume, bool isBid) {
   auto &exchange = queryHandle(params);
