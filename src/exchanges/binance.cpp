@@ -133,9 +133,17 @@ bool isOrderComplete(Parameters &params, std::string orderId)
     return complete;
 }
 //TODO: Currency
-double getActivePos(Parameters &params)
+double getActivePos(Parameters &params, std::string orderId)
 {
-    return getAvail(params, "BTC");
+  double activeSize = 0.0;
+  if (!orderId.empty()){
+    std::string builder = "symbol=BTCUSDT&orderId=";
+    builder += orderId.c_str();
+    unique_json root { authRequest(params, "GET", "/api/v3/order",builder) };
+    activeSize = atof(json_string_value(json_object_get(root.get(),"origQty")));
+  }
+
+  return activeSize;  
 }
 
 double getLimitPrice(Parameters &params, double volume, bool isBid)
