@@ -1,6 +1,6 @@
 #include "parameters.h"
 #include "unique_sqlite.hpp"
-
+#include "result.h"
 #include <iostream>
 #include <string>
 

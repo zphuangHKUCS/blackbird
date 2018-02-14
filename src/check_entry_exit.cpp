@@ -53,7 +53,7 @@ bool checkEntry(Bitcoin* btcLong, Bitcoin* btcShort, Result &trade, Parameters& 
 
   if (params.verbose) {
     params.logFile->precision(2);
-    *params.logFile << "   " << btcLong->getExchName() << "/" << btcShort->getExchName() << ":\t" << percToStr(res.spreadIn);
+    *params.logFile << "   " << btcLong->getExchName() << "/" << btcShort->getExchName() << ":\t" << percToStr(trade.spreadIn);
     *params.logFile << " [target " << percToStr(params.spreadEntry) << ", min " << percToStr(trade.minSpread) << ", max " << percToStr(trade.maxSpread) << "]";
     // The short-term volatility is computed and
     // displayed. No other action with it for
@@ -130,7 +130,7 @@ bool checkEntry(Bitcoin* btcLong, Bitcoin* btcShort, Result &trade, Parameters& 
   trade.priceLongIn = priceLong;
   trade.priceShortIn = priceShort;
   trade.exitTarget = trade.spreadIn - params.spreadTarget - 2.0*(trade.feesLong + trade.feesShort);
-  res.trailingWaitCount[longId][shortId] = 0;
+  trade.trailingWaitCount = 0;
   return true;
 }
 
@@ -142,8 +142,6 @@ bool checkExit(Bitcoin* btcLong, Bitcoin* btcShort, Result &trade, Parameters& p
   } else {
     trade.spreadOut = 0.0;
   }
-  int longId = btcLong->getId();
-  int shortId = btcShort->getId();
 
   trade.maxSpread = std::max(trade.spreadOut, trade.maxSpread);
   trade.minSpread = std::min(trade.spreadOut, trade.minSpread);

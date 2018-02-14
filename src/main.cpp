@@ -39,7 +39,7 @@ typedef quote_t (*getQuoteType) (Parameters& params);
 typedef double (*getAvailType) (Parameters& params, std::string currency);
 typedef std::string (*sendOrderType) (Parameters& params, std::string direction, double quantity, double price);
 typedef bool (*isOrderCompleteType) (Parameters& params, std::string orderId);
-typedef double (*getActivePosType) (Parameters& params);
+typedef double (*getActivePosType) (Parameters& params, std::string orderId);
 typedef double (*getLimitPriceType) (Parameters& params, double volume, bool isBid);
 
 
@@ -102,14 +102,14 @@ int main(int argc, char** argv) {
 
   // Function arrays containing all the exchanges functions
   // using the 'typedef' declarations from above.
-  getQuoteType getQuote[11];
-  getAvailType getAvail[11];
-  sendOrderType sendLongOrder[11];
-  sendOrderType sendShortOrder[11];
-  isOrderCompleteType isOrderComplete[11];
-  getActivePosType getActivePos[11];
-  getLimitPriceType getLimitPrice[11];
-  std::string dbTableName[11];
+  getQuoteType getQuote[13];
+  getAvailType getAvail[13];
+  sendOrderType sendLongOrder[13];
+  sendOrderType sendShortOrder[13];
+  isOrderCompleteType isOrderComplete[13];
+  getActivePosType getActivePos[13];
+  getLimitPriceType getLimitPrice[13];
+  std::string dbTableName[13];
 
 
   // Adds the exchange functions to the arrays for all the defined exchanges
@@ -396,8 +396,8 @@ int main(int argc, char** argv) {
 
   // Checks for a restore.txt file, to see if
   // the program exited with an open position.
-  Result res;
-  res.reset();
+  Result m;
+  m.reset();
 
   //creates vectors to store entry opportunities and in market positions
   std::vector<Result> entryVec;
@@ -453,7 +453,8 @@ int main(int argc, char** argv) {
       logFile << std::setprecision(2) << balance[i].leg2 << " " << params.leg2 << "\t"
               << std::setprecision(6) << balance[i].leg1 << " " << params.leg1 << std::endl;
     }
-    if (balance[i].leg1 > 0.0050 && !inMarket) { // FIXME: hard-coded number
+    // FIXME: I do not use this safety -- does it have an effect?
+    if (balance[i].leg1 > 0.0050 && tradeVec.empty()) { // FIXME: hard-coded number
       logFile << "ERROR: All " << params.leg1 << " accounts must be empty before starting Blackbird" << std::endl;
       exit(EXIT_FAILURE);
     }
@@ -512,12 +513,9 @@ int main(int argc, char** argv) {
       sleep_for(secs(-diffTime));
     }
     // Header for every iteration of the loop
-    if (params.verbose) {
-      if (!inMarket) {
-        logFile << "[ " << printDateTime(currTime) << " ]" << std::endl;
-      } else {
-        logFile << "[ " << printDateTime(currTime) << " IN MARKET: Long " << res.exchNameLong << " / Short " << res.exchNameShort << " ]" << std::endl;
-      }
+    if (params.verbose)
+    {
+      logFile << "[ " << printDateTime(currTime) << " ]" << std::endl;
     }
     // Gets the bid and ask of all the exchanges
     for (int i = 0; i < numExch; ++i) {

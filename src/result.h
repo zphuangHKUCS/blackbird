@@ -20,6 +20,9 @@ struct Result {
   std::time_t exitTime;
   std::string exchNameLong;
   std::string exchNameShort;
+
+  std::string longExchTradeId;
+  std::string shortExchTradeId;
   double priceLongIn;
   double priceShortIn;
   double priceLongOut;
