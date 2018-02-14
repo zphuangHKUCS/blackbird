@@ -50,25 +50,18 @@ quote_t getQuote(Parameters &params)
 
 double getAvail(Parameters &params, std::string currency)
 {
-  unique_json root{authRequest(params, "/0/private/Balance")};
-  json_t *result = json_object_get(root.get(), "result");
-  if (json_object_size(result) == 0)
-  {
-    return 0.0;
-  }
-  double available = 0.0;
-  if (currency.compare("usd") == 0)
-  {
-    const char *avail_str = json_string_value(json_object_get(result, "ZUSD"));
+  double available = 0.00;
+  if (currency.compare("usd") == 0) {
+    unique_json root { authRequest(params, "/0/private/TradeBalance", "asset=ZUSD")};
+    json_t *result = json_object_get(root.get(), "result");
+    const char * avail_str = json_string_value(json_object_get(result, "mf"));
     available = avail_str ? atof(avail_str) : 0.0;
-  }
-  else if (currency.compare("btc") == 0)
-  {
-    const char *avail_str = json_string_value(json_object_get(result, "XXBT"));
+  } else if (currency.compare("btc") == 0) {
+    unique_json root { authRequest(params, "/0/private/Balance")};
+    json_t *result = json_object_get(root.get(),"result");
+    const char * avail_str = json_string_value(json_object_get(result, "XXBT"));
     available = avail_str ? atof(avail_str) : 0.0;
-  }
-  else
-  {
+  } else {
     *params.logFile << "<Kraken> Currency not supported" << std::endl;
   }
   return available;

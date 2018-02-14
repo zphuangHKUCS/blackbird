@@ -53,12 +53,13 @@ quote_t getQuote(Parameters &params)
 double getAvail(Parameters &params, std::string currency)
 {
   std::string cur_str;
+  //std::transform(currency.begin(), currency.end(), currency.begin(), ::toupper);
   cur_str += "currency=";
-  if (currency.compare("USD")==0){
+  if (currency.compare("usd")==0){
     cur_str += "USDT";
   }
   else {
-    cur_str += currency.c_str();
+    cur_str += "BTC";
   }
   unique_json root { authRequest(params, "/api/v1.1/account/getbalance", cur_str)};
 

@@ -45,6 +45,7 @@ quote_t getQuote(Parameters &params)
 
 double getAvail(Parameters &params, std::string currency)
 {
+    std::transform(currency.begin(), currency.end(), currency.begin(), ::toupper);
     std::string cur_str;
     //cur_str += "symbol=BTCUSDT";
     if (currency.compare("USD") == 0)
@@ -61,6 +62,7 @@ double getAvail(Parameters &params, std::string currency)
     double available = 0.0;
     const char *currstr;
     auto balances = json_object_get(root.get(), "balances");
+    // this loops 151 times....
     for (size_t i = 0; i < arraySize; i++)
     {
         std::string tmpCurrency = json_string_value(json_object_get(json_array_get(balances, i), "asset"));
@@ -70,10 +72,11 @@ double getAvail(Parameters &params, std::string currency)
             if (currstr != NULL)
             {
                 available = atof(currstr);
+                break;
             }
             else
             {
-                *params.logFile << "<binance> Error with currency string" << std::endl;
+                *params.logFile << "<Binance> Error with currency string" << std::endl;
                 available = 0.0;
             }
         }

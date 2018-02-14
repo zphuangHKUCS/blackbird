@@ -23,12 +23,13 @@ static RestApi &queryHandle(Parameters &params)
 
 quote_t getQuote(Parameters &params)
 {
+
   auto &exchange = queryHandle(params);
   std::string pair;
   pair = "/products/";
-  pair += params.leg1.c_str();
+  pair += "BTC";
   pair += "-";
-  pair += params.leg2.c_str();
+  pair += "USD";
   pair += "/ticker";
   unique_json root{exchange.getRequest(pair)};
   const char *bid, *ask;
@@ -47,11 +48,13 @@ double getAvail(Parameters &params, std::string currency)
   unique_json root{authRequest(params, "GET", "/accounts", "")};
   size_t arraySize = json_array_size(root.get());
   double available = 0.0;
+  std::transform(currency.begin(), currency.end(), currency.begin(), ::toupper);
+  const char * curr_ = currency.c_str();
   const char *currstr;
   for (size_t i = 0; i < arraySize; i++)
   {
     std::string tmpCurrency = json_string_value(json_object_get(json_array_get(root.get(), i), "currency"));
-    if (tmpCurrency.compare(currency.c_str()) == 0)
+    if (tmpCurrency.compare(curr_) == 0)
     {
       currstr = json_string_value(json_object_get(json_array_get(root.get(), i), "available"));
       if (currstr != NULL)
