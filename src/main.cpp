@@ -86,6 +86,13 @@ int main(int argc, char** argv) {
     std::cerr << "ERROR: cannot connect to the database \'" << params.dbFile << "\'\n" << std::endl;
     exit(EXIT_FAILURE);
   }
+  // Creates the trade table for trade results.
+  if (createTradeTable(params) != 0)
+  {
+    std::cerr << "ERROR: problems with database \'" << params.dbFile << "\'\n"
+              << std::endl;
+    exit(EXIT_FAILURE);
+  };
 
   // We only trade BTC/USD for the moment
   if (params.leg1.compare("BTC") != 0 || params.leg2.compare("USD") != 0) {
@@ -341,6 +348,7 @@ int main(int argc, char** argv) {
 
   std::cout << "Log file generated: " << logFileName << "\nBlackbird is running... (pid " << getpid() << ")\n" << std::endl;
   int numExch = params.nbExch();
+  int comboExch = 0;
   // The btcVec vector contains details about every exchange,
   // like fees, as specified in bitcoin.h
   std::vector<Bitcoin> btcVec;
@@ -348,8 +356,12 @@ int main(int argc, char** argv) {
   // Creates a new Bitcoin structure within btcVec for every exchange we want to trade on
   for (int i = 0; i < numExch; ++i) {
     btcVec.push_back(Bitcoin(i, params.exchName[i], params.fees[i], params.canShort[i], params.isImplemented[i]));
+    if (params.canShort[i]){
+      comboExch +=1;
+    }
   }
-
+  //creates the number of possible trade combos -- not really used but useful
+  int realNum = (comboExch -1) * comboExch + (numExch - comboExch) * comboExch;
   // Inits cURL connections
   params.curl = curl_easy_init();
   // Shows the spreads
@@ -386,7 +398,49 @@ int main(int argc, char** argv) {
   // the program exited with an open position.
   Result res;
   res.reset();
-  bool inMarket = res.loadPartialResult("restore.txt");
+
+  //creates vectors to store entry opportunities and in market positions
+  std::vector<Result> entryVec;
+  entryVec.reserve(realNum);
+  std::vector<Result> tradeVec;
+  tradeVec.reserve(realNum);
+  // Creates blank entryVec entries for every possible combination
+  for (int i = 0; i < numExch; i++)
+  {
+    for (int j = 0; j < numExch; j++)
+    {
+      if (i != j)
+      {
+        if (btcVec[j].getHasShort())
+        {
+          // all of the combinations will be loaded into vectors with exchIds
+          m.idExchLong = i;
+          m.idExchShort = j;
+          entryVec.push_back(m);
+        }
+      }
+    }
+  }
+
+  // grabs the number of trades outstanding
+  int numTrades = getNumTradesOutstanding(params);
+  if (realNum < numTrades)
+  {
+    std::cout << "Error: You have more outstanding positions than possible." << std::endl;
+    std::cout << "You may have enabled/disabled exchanges since last run, Check your Db/exchanges." << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+  // Get trades that were left open last session
+  getTradesFromDb(params, tradeVec);
+
+  // this is to remove the outstanding trades exchange pairs (i.e. Long GDAX short Kraken) from EntryVec
+  //FIXME: there are better ways to do this for sure...
+  if (!tradeVec.empty()){
+    for (size_t i = 0; i< tradeVec.size(); i++){
+      m.removePair(entryVec,tradeVec[i].idExchLong);
+    }
+  }
 
   // Writes the current balances into the log file
   for (int i = 0; i < numExch; ++i) {
@@ -498,197 +552,242 @@ int main(int argc, char** argv) {
     // Stores all the spreads in arrays to
     // compute the volatility. The volatility
     // is not used for the moment.
-    if (params.useVolatility) {
-      for (int i = 0; i < numExch; ++i) {
-        for (int j = 0; j < numExch; ++j) {
-          if (i != j) {
-            if (btcVec[j].getHasShort()) {
-              double longMidPrice = btcVec[i].getMidPrice();
-              double shortMidPrice = btcVec[j].getMidPrice();
-              if (longMidPrice > 0.0 && shortMidPrice > 0.0) {
-                if (res.volatility[i][j].size() >= params.volatilityPeriod) {
-                  res.volatility[i][j].pop_back();
-                }
-                res.volatility[i][j].push_front((longMidPrice - shortMidPrice) / longMidPrice);
-              }
-            }
+    if (params.useVolatility)
+    {
+      for (size_t i = 0; i < entryVec.size(); i++)
+      {
+        double longMidPrice = btcVec[entryVec[i].idExchLong].getMidPrice();
+        double shortMidPrice = btcVec[entryVec[i].idExchShort].getMidPrice();
+        if (longMidPrice > 0.0 && shortMidPrice > 0.0)
+        {
+          if (entryVec[i].volatility.size() >= params.volatilityPeriod)
+          {
+            entryVec[i].volatility.pop_back();
           }
+          entryVec[i].volatility.push_front((longMidPrice - shortMidPrice) / longMidPrice);
+        }
+      }
+      for (size_t i = 0; i < tradeVec.size(); i++)
+      {
+        double longMidPrice = btcVec[tradeVec[i].idExchLong].getMidPrice();
+        double shortMidPrice = btcVec[tradeVec[i].idExchShort].getMidPrice();
+        if (longMidPrice > 0.0 && shortMidPrice > 0.0)
+        {
+          if (tradeVec[i].volatility.size() >= params.volatilityPeriod)
+          {
+            tradeVec[i].volatility.pop_back();
+          }
+          tradeVec[i].volatility.push_front((longMidPrice - shortMidPrice) / longMidPrice);
         }
       }
     }
     // Looks for arbitrage opportunities on all the exchange combinations
-    if (!inMarket) {
-      for (int i = 0; i < numExch; ++i) {
-        for (int j = 0; j < numExch; ++j) {
-          if (i != j) {
-            if (checkEntry(&btcVec[i], &btcVec[j], res, params)) {
-              // An entry opportunity has been found!
-              res.exposure = std::min(balance[res.idExchLong].leg2, balance[res.idExchShort].leg2);
-              if (params.demoMode) {
-                logFile << "INFO: Opportunity found but no trade will be generated (Demo mode)" << std::endl;
-                break;
-              }
-              if (res.exposure == 0.0) {
-                logFile << "WARNING: Opportunity found but no cash available. Trade canceled" << std::endl;
-                break;
-              }
-              if (params.useFullExposure == false && res.exposure <= params.testedExposure) {
-                logFile << "WARNING: Opportunity found but no enough cash. Need more than TEST cash (min. $"
-                        << std::setprecision(2) << params.testedExposure << "). Trade canceled" << std::endl;
-                break;
-              }
-              if (params.useFullExposure) {
-                // Removes 1% of the exposure to have
-                // a little bit of margin.
-                res.exposure -= 0.01 * res.exposure;
-                if (res.exposure > params.maxExposure) {
-                  logFile << "WARNING: Opportunity found but exposure ("
-                          << std::setprecision(2)
-                          << res.exposure << ") above the limit\n"
-                          << "         Max exposure will be used instead (" << params.maxExposure << ")" << std::endl;
-                  res.exposure = params.maxExposure;
-                }
-              } else {
-                res.exposure = params.testedExposure;
-              }
-              // Checks the volumes and, based on that, computes the limit prices
-              // that will be sent to the exchanges
-              double volumeLong = res.exposure / btcVec[res.idExchLong].getAsk();
-              double volumeShort = res.exposure / btcVec[res.idExchShort].getBid();
-              double limPriceLong = getLimitPrice[res.idExchLong](params, volumeLong, false);
-              double limPriceShort = getLimitPrice[res.idExchShort](params, volumeShort, true);
-              if (limPriceLong == 0.0 || limPriceShort == 0.0) {
-                logFile << "WARNING: Opportunity found but error with the order books (limit price is null). Trade canceled\n";
-                logFile.precision(2);
-                logFile << "         Long limit price:  " << limPriceLong << std::endl;
-                logFile << "         Short limit price: " << limPriceShort << std::endl;
-                res.trailing[res.idExchLong][res.idExchShort] = -1.0;
-                break;
-              }
-              if (limPriceLong - res.priceLongIn > params.priceDeltaLim || res.priceShortIn - limPriceShort > params.priceDeltaLim) {
-                logFile << "WARNING: Opportunity found but not enough liquidity. Trade canceled\n";
-                logFile.precision(2);
-                logFile << "         Target long price:  " << res.priceLongIn << ", Real long price:  " << limPriceLong << std::endl;
-                logFile << "         Target short price: " << res.priceShortIn << ", Real short price: " << limPriceShort << std::endl;
-                res.trailing[res.idExchLong][res.idExchShort] = -1.0;
-                break;
-              }
-              // We are in market now, meaning we have positions on leg1 (the hedged on)
-              // We store the details of that first trade into the Result structure.
-              inMarket = true;
-              resultId++;
-              res.id = resultId;
-              res.entryTime = currTime;
-              res.priceLongIn = limPriceLong;
-              res.priceShortIn = limPriceShort;
-              res.printEntryInfo(*params.logFile);
-              res.maxSpread[res.idExchLong][res.idExchShort] = -1.0;
-              res.minSpread[res.idExchLong][res.idExchShort] = 1.0;
-              res.trailing[res.idExchLong][res.idExchShort] = 1.0;
-
-              // Send the orders to the two exchanges
-              auto longOrderId = sendLongOrder[res.idExchLong](params, "buy", volumeLong, limPriceLong);
-              auto shortOrderId = sendShortOrder[res.idExchShort](params, "sell", volumeShort, limPriceShort);
-              logFile << "Waiting for the two orders to be filled..." << std::endl;
-              sleep_for(millisecs(5000));
-              bool isLongOrderComplete = isOrderComplete[res.idExchLong](params, longOrderId);
-              bool isShortOrderComplete = isOrderComplete[res.idExchShort](params, shortOrderId);
-              // Loops until both orders are completed
-              while (!isLongOrderComplete || !isShortOrderComplete) {
-                sleep_for(millisecs(3000));
-                if (!isLongOrderComplete) {
-                  logFile << "Long order on " << params.exchName[res.idExchLong] << " still open..." << std::endl;
-                  isLongOrderComplete = isOrderComplete[res.idExchLong](params, longOrderId);
-                }
-                if (!isShortOrderComplete) {
-                  logFile << "Short order on " << params.exchName[res.idExchShort] << " still open..." << std::endl;
-                  isShortOrderComplete = isOrderComplete[res.idExchShort](params, shortOrderId);
-                }
-              }
-              // Both orders are now fully executed
-              logFile << "Done" << std::endl;
-
-              // Stores the partial result to file in case
-              // the program exits before closing the position.
-              res.savePartialResult("restore.txt");
-
-              // Resets the order ids
-              longOrderId  = "0";
-              shortOrderId = "0";
-              break;
-            }
-          }
-        }
-        if (inMarket) {
+    for (size_t i = 0; i < entryVec.size(); i++)
+    {
+      if (checkEntry(&btcVec[entryVec[i].idExchLong], &btcVec[entryVec[i].idExchShort], entryVec[i], params))
+      {
+        // An entry opportunity has been found!
+        entryVec[i].exposure = std::min(balance[entryVec[i].idExchLong].leg2, balance[entryVec[i].idExchShort].leg2);
+        if (params.demoMode)
+        {
+          logFile << "INFO: Opportunity found but no trade will be generated (Demo mode)" << std::endl;
           break;
         }
-      }
-      if (params.verbose) {
-        logFile << std::endl;
-      }
-    } else if (inMarket) {
-      // We are in market and looking for an exit opportunity
-      if (checkExit(&btcVec[res.idExchLong], &btcVec[res.idExchShort], res, params, currTime)) {
-        // An exit opportunity has been found!
-        // We check the current leg1 exposure
-        std::vector<double> btcUsed(numExch);
-        for (int i = 0; i < numExch; ++i) {
-          btcUsed[i] = getActivePos[i](params);
+        if (entryVec[i].exposure == 0.0)
+        {
+          logFile << "WARNING: Opportunity found but no cash available. Trade canceled" << std::endl;
+          break;
         }
-        // Checks the volumes and computes the limit prices that will be sent to the exchanges
-        double volumeLong = btcUsed[res.idExchLong];
-        double volumeShort = btcUsed[res.idExchShort];
-        double limPriceLong = getLimitPrice[res.idExchLong](params, volumeLong, true);
-        double limPriceShort = getLimitPrice[res.idExchShort](params, volumeShort, false);
-        if (limPriceLong == 0.0 || limPriceShort == 0.0) {
+        if (params.useFullExposure == false && entryVec[i].exposure <= params.testedExposure)
+        {
+          logFile << "WARNING: Opportunity found but not enough cash. Need more than TEST cash (min. $"
+                  << std::setprecision(2) << params.testedExposure << "). Trade canceled" << std::endl;
+          break;
+        }
+        if (entryVec[i].exposure < 10){
+          logFile << "WARNING: Opportunity found but not enough cash. Need more than $10" << std::endl;
+          break;
+        }
+        if (params.useFullExposure)
+        {
+          // Removes 1% of the exposure to have
+          // a little bit of margin.
+          entryVec[i].exposure -= 0.01 * entryVec[i].exposure;
+          if (entryVec[i].exposure > params.maxExposure)
+          {
+            logFile << "WARNING: Opportunity found but exposure ("
+                    << std::setprecision(2)
+                    << entryVec[i].exposure << ") above the limit\n"
+                    << "         Max exposure will be used instead (" << params.maxExposure << ")" << std::endl;
+            entryVec[i].exposure = params.maxExposure;
+          }
+        }
+        else
+        {
+          entryVec[i].exposure = params.testedExposure;
+        }
+        // Checks the volumes and, based on that, computes the limit prices
+        // that will be sent to the exchanges
+        double volumeLong = entryVec[i].exposure / btcVec[entryVec[i].idExchLong].getAsk();
+        double volumeShort = entryVec[i].exposure / btcVec[entryVec[i].idExchShort].getBid();
+        double limPriceLong = getLimitPrice[entryVec[i].idExchLong](params, volumeLong, false);
+        double limPriceShort = getLimitPrice[entryVec[i].idExchShort](params, volumeShort, true);
+        if (limPriceLong == 0.0 || limPriceShort == 0.0)
+        {
           logFile << "WARNING: Opportunity found but error with the order books (limit price is null). Trade canceled\n";
           logFile.precision(2);
           logFile << "         Long limit price:  " << limPriceLong << std::endl;
           logFile << "         Short limit price: " << limPriceShort << std::endl;
-          res.trailing[res.idExchLong][res.idExchShort] = 1.0;
-        } else if (res.priceLongOut - limPriceLong > params.priceDeltaLim || limPriceShort - res.priceShortOut > params.priceDeltaLim) {
+          entryVec[i].trailing = -1.0;
+          break;
+        }
+        if (limPriceLong - entryVec[i].priceLongIn > params.priceDeltaLim || entryVec[i].priceShortIn - limPriceShort > params.priceDeltaLim)
+        {
           logFile << "WARNING: Opportunity found but not enough liquidity. Trade canceled\n";
           logFile.precision(2);
-          logFile << "         Target long price:  " << res.priceLongOut << ", Real long price:  " << limPriceLong << std::endl;
-          logFile << "         Target short price: " << res.priceShortOut << ", Real short price: " << limPriceShort << std::endl;
-          res.trailing[res.idExchLong][res.idExchShort] = 1.0;
-        } else {
-          res.exitTime = currTime;
-          res.priceLongOut = limPriceLong;
-          res.priceShortOut = limPriceShort;
-          res.printExitInfo(*params.logFile);
+          logFile << "         Target long price:  " << entryVec[i].priceLongIn << ", Real long price:  " << limPriceLong << std::endl;
+          logFile << "         Target short price: " << entryVec[i].priceShortIn << ", Real short price: " << limPriceShort << std::endl;
+          entryVec[i].trailing = -1.0;
+          break;
+        }
+        // We are in market now, meaning we have positions on leg1 (the hedged on)
+        // We store the details of that first trade into the Result structure.
+        resultId++;
+        entryVec[i].id = resultId;
+        entryVec[i].entryTime = currTime;
+        entryVec[i].priceLongIn = limPriceLong;
+        entryVec[i].priceShortIn = limPriceShort;
+        entryVec[i].printEntryInfo(*params.logFile);
+        entryVec[i].maxSpread = -1.0;
+        entryVec[i].minSpread = 1.0;
+        entryVec[i].trailing = 1.0;
+        // Send the orders to the two exchanges
+        auto longOrderId = sendLongOrder[entryVec[i].idExchLong](params, "buy", volumeLong, limPriceLong);
+        auto shortOrderId = sendShortOrder[entryVec[i].idExchShort](params, "sell", volumeShort, limPriceShort);
+        logFile << "Waiting for the two orders to be filled..." << std::endl;
+        sleep_for(millisecs(5000));
+        bool isLongOrderComplete = isOrderComplete[entryVec[i].idExchLong](params, longOrderId);
+        bool isShortOrderComplete = isOrderComplete[entryVec[i].idExchShort](params, shortOrderId);
+        // Loops until both orders are completed
+        while (!isLongOrderComplete || !isShortOrderComplete)
+        {
+          sleep_for(millisecs(3000));
+          if (!isLongOrderComplete)
+          {
+            logFile << "Long order on " << params.exchName[entryVec[i].idExchLong] << " still open..." << std::endl;
+            isLongOrderComplete = isOrderComplete[entryVec[i].idExchLong](params, longOrderId);
+          }
+          if (!isShortOrderComplete)
+          {
+            logFile << "Short order on " << params.exchName[entryVec[i].idExchShort] << " still open..." << std::endl;
+            isShortOrderComplete = isOrderComplete[entryVec[i].idExchShort](params, shortOrderId);
+          }
+        }
+        // Both orders are now fully executed
+        logFile << "Done" << std::endl;
+
+        // updates the balances of executed exchanges
+        balance[entryVec[i].idExchLong].leg1 = getAvail[entryVec[i].idExchLong](params, params.leg1.c_str()); // FIXME: currency hard-coded
+        balance[entryVec[i].idExchShort].leg2 = getAvail[entryVec[i].idExchShort](params, params.leg2.c_str()); // FIXME: currency hard-coded
+        
+        // Adding new parameters to result file to keep track of executed trades
+        entryVec[i].longExchTradeId = longOrderId;
+        entryVec[i].shortExchTradeId = shortOrderId;
+        // Stores the partial result to file in case
+        // the program exits before closing the position.
+        if (addTradesToDb(entryVec[i], params, 0) != 0)
+        {
+          std::cerr << "ERROR: problems with database \'" << params.dbFile << "\'\n"
+                    << std::endl;
+          exit(EXIT_FAILURE);
+        };
+        tradeVec.push_back(entryVec[i]);
+        entryVec.erase(entryVec.begin() + i);
+        longOrderId = "0";
+        shortOrderId = "0";
+        break;
+      }
+    }
+    if (params.verbose)
+    {
+      logFile << std::endl;
+    }
+    for (size_t i = 0; i < tradeVec.size(); i++)
+    {
+      if (params.verbose)
+      {
+        logFile << "[ " << printDateTime(currTime) << " IN MARKET: Long " << tradeVec[i].exchNameLong << " / Short " << tradeVec[i].exchNameShort << " ]" << std::endl;
+      }
+      if (checkExit(&btcVec[tradeVec[i].idExchLong], &btcVec[tradeVec[i].idExchShort], tradeVec[i], params, currTime))
+      {
+        // An exit opportunity has been found!
+        // We check the current leg1 exposure
+        std::vector<double> btcUsed(realNum);
+        btcUsed[tradeVec[i].idExchLong] = getActivePos[tradeVec[i].idExchLong](params, tradeVec[i].longExchTradeId);
+        btcUsed[tradeVec[i].idExchShort] = getActivePos[tradeVec[i].idExchShort](params, tradeVec[i].shortExchTradeId);
+        // Checks the volumes and computes the limit prices that will be sent to the exchanges
+        double volumeLong = btcUsed[tradeVec[i].idExchLong];
+        double volumeShort = btcUsed[tradeVec[i].idExchShort];
+        double limPriceLong = getLimitPrice[tradeVec[i].idExchLong](params, volumeLong, true);
+        double limPriceShort = getLimitPrice[tradeVec[i].idExchShort](params, volumeShort, false);
+        if (limPriceLong == 0.0 || limPriceShort == 0.0)
+        {
+          logFile << "WARNING: Opportunity found but error with the order books (limit price is null). Trade canceled\n";
+          logFile.precision(2);
+          logFile << "         Long limit price:  " << limPriceLong << std::endl;
+          logFile << "         Short limit price: " << limPriceShort << std::endl;
+          tradeVec[i].trailing = 1.0;
+        }
+        else if (tradeVec[i].priceLongOut - limPriceLong > params.priceDeltaLim || limPriceShort - tradeVec[i].priceShortOut > params.priceDeltaLim)
+        {
+          logFile << "WARNING: Opportunity found but not enough liquidity. Trade canceled\n";
+          logFile.precision(2);
+          logFile << "         Target long price:  " << tradeVec[i].priceLongOut << ", Real long price:  " << limPriceLong << std::endl;
+          logFile << "         Target short price: " << tradeVec[i].priceShortOut << ", Real short price: " << limPriceShort << std::endl;
+          tradeVec[i].trailing = 1.0;
+        }
+        else
+        {
+          tradeVec[i].exitTime = currTime;
+          tradeVec[i].priceLongOut = limPriceLong;
+          tradeVec[i].priceShortOut = limPriceShort;
+          tradeVec[i].printExitInfo(*params.logFile);
 
           logFile.precision(6);
-          logFile << params.leg1 << " exposure on " << params.exchName[res.idExchLong] << ": " << volumeLong << '\n'
-                  << params.leg1 << " exposure on " << params.exchName[res.idExchShort] << ": " << volumeShort << '\n'
+          logFile << params.leg1 << " exposure on " << params.exchName[tradeVec[i].idExchLong] << ": " << volumeLong << '\n'
+                  << params.leg1 << " exposure on " << params.exchName[tradeVec[i].idExchShort] << ": " << volumeShort << '\n'
                   << std::endl;
-          auto longOrderId = sendLongOrder[res.idExchLong](params, "sell", fabs(btcUsed[res.idExchLong]), limPriceLong);
-          auto shortOrderId = sendShortOrder[res.idExchShort](params, "buy", fabs(btcUsed[res.idExchShort]), limPriceShort);
+          auto longOrderId = sendLongOrder[tradeVec[i].idExchLong](params, "sell", fabs(btcUsed[tradeVec[i].idExchLong]), limPriceLong);
+          auto shortOrderId = sendShortOrder[tradeVec[i].idExchShort](params, "buy", fabs(btcUsed[tradeVec[i].idExchShort]), limPriceShort);
           logFile << "Waiting for the two orders to be filled..." << std::endl;
           sleep_for(millisecs(5000));
-          bool isLongOrderComplete = isOrderComplete[res.idExchLong](params, longOrderId);
-          bool isShortOrderComplete = isOrderComplete[res.idExchShort](params, shortOrderId);
+          bool isLongOrderComplete = isOrderComplete[tradeVec[i].idExchLong](params, longOrderId);
+          bool isShortOrderComplete = isOrderComplete[tradeVec[i].idExchShort](params, shortOrderId);
           // Loops until both orders are completed
-          while (!isLongOrderComplete || !isShortOrderComplete) {
+          while (!isLongOrderComplete || !isShortOrderComplete)
+          {
             sleep_for(millisecs(3000));
-            if (!isLongOrderComplete) {
-              logFile << "Long order on " << params.exchName[res.idExchLong] << " still open..." << std::endl;
-              isLongOrderComplete = isOrderComplete[res.idExchLong](params, longOrderId);
+            if (!isLongOrderComplete)
+            {
+              logFile << "Long order on " << params.exchName[tradeVec[i].idExchLong] << " still open..." << std::endl;
+              isLongOrderComplete = isOrderComplete[tradeVec[i].idExchLong](params, longOrderId);
             }
-            if (!isShortOrderComplete) {
-              logFile << "Short order on " << params.exchName[res.idExchShort] << " still open..." << std::endl;
-              isShortOrderComplete = isOrderComplete[res.idExchShort](params, shortOrderId);
+            if (!isShortOrderComplete)
+            {
+              logFile << "Short order on " << params.exchName[tradeVec[i].idExchShort] << " still open..." << std::endl;
+              isShortOrderComplete = isOrderComplete[tradeVec[i].idExchShort](params, shortOrderId);
             }
           }
-          logFile << "Done\n" << std::endl;
-          longOrderId  = "0";
-          shortOrderId = "0";
-          inMarket = false;
-          for (int i = 0; i < numExch; ++i) {
-            balance[i].leg2After = getAvail[i](params, "usd"); // FIXME: currency hard-coded
-            balance[i].leg1After = getAvail[i](params, "btc"); // FIXME: currency hard-coded
+          logFile << "Done\n"
+                  << std::endl;
+
+          for (int i = 0; i < numExch; ++i)
+          {
+            balance[i].leg2After = getAvail[i](params, params.leg2.c_str()); // FIXME: currency hard-coded
+            balance[i].leg1After = getAvail[i](params, params.leg1.c_str()); // FIXME: currency hard-coded
           }
-          for (int i = 0; i < numExch; ++i) {
+          for (int i = 0; i < numExch; ++i)
+          {
             logFile << "New balance on " << params.exchName[i] << ":  \t";
             logFile.precision(2);
             logFile << balance[i].leg2After << " " << params.leg2 << " (perf " << balance[i].leg2After - balance[i].leg2 << "), ";
@@ -696,40 +795,69 @@ int main(int argc, char** argv) {
           }
           logFile << std::endl;
           // Update total leg2 balance
-          for (int i = 0; i < numExch; ++i) {
-            res.leg2TotBalanceBefore += balance[i].leg2;
-            res.leg2TotBalanceAfter  += balance[i].leg2After;
+          for (int i = 0; i < numExch; ++i)
+          {
+            tradeVec[i].leg2TotBalanceBefore += balance[i].leg2;
+            tradeVec[i].leg2TotBalanceAfter += balance[i].leg2After;
           }
           // Update current balances
-          for (int i = 0; i < numExch; ++i) {
+          for (int i = 0; i < numExch; ++i)
+          {
             balance[i].leg2 = balance[i].leg2After;
             balance[i].leg1 = balance[i].leg1After;
           }
+
           // Prints the result in the result CSV file
           logFile.precision(2);
-          logFile << "ACTUAL PERFORMANCE: " << "$" << res.leg2TotBalanceAfter - res.leg2TotBalanceBefore << " (" << res.actualPerf() * 100.0 << "%)\n" << std::endl;
-          csvFile << res.id << ","
-                  << res.exchNameLong << ","
-                  << res.exchNameShort << ","
-                  << printDateTimeCsv(res.entryTime) << ","
-                  << printDateTimeCsv(res.exitTime) << ","
-                  << res.getTradeLengthInMinute() << ","
-                  << res.exposure * 2.0 << ","
-                  << res.leg2TotBalanceBefore << ","
-                  << res.leg2TotBalanceAfter << ","
-                  << res.actualPerf() << std::endl;
+          logFile << "ACTUAL PERFORMANCE: "
+                  << "$" << tradeVec[i].leg2TotBalanceAfter - tradeVec[i].leg2TotBalanceBefore << " (" << tradeVec[i].actualPerf() * 100.0 << "%)\n"
+                  << std::endl;
+          csvFile << tradeVec[i].id << ","
+                  << tradeVec[i].exchNameLong << ","
+                  << tradeVec[i].exchNameShort << ","
+                  << printDateTimeCsv(tradeVec[i].entryTime) << ","
+                  << printDateTimeCsv(tradeVec[i].exitTime) << ","
+                  << tradeVec[i].getTradeLengthInMinute() << ","
+                  << tradeVec[i].exposure * 2.0 << ","
+                  << tradeVec[i].leg2TotBalanceBefore << ","
+                  << tradeVec[i].leg2TotBalanceAfter << ","
+                  << tradeVec[i].actualPerf() << std::endl;
           // Sends an email with the result of the trade
-          if (params.sendEmail) {
-            sendEmail(res, params);
+          if (params.sendEmail)
+          {
+            // TODO: Fix
+            sendEmail(tradeVec[i], params);
             logFile << "Email sent" << std::endl;
           }
-          res.reset();
+          if (closeTradeInDb(tradeVec[i], params) != 0)
+          {
+            std::cerr << "ERROR: problems with database \'" << params.dbFile << "\'\n"
+                      << std::endl;
+            exit(EXIT_FAILURE);
+          };
+          // Add the new order ids to the tradeVec
+          tradeVec[i].longExchTradeId = longOrderId;
+          tradeVec[i].shortExchTradeId = shortOrderId;
+          // Add the closing trade to the DB
+          if (addTradesToDb(tradeVec[i], params, 1) != 0)
+          {
+            std::cerr << "ERROR: problems with database \'" << params.dbFile << "\'\n"
+                      << std::endl;
+            exit(EXIT_FAILURE);
+          };
+          // reset orderIds
+          longOrderId = "0";
+          shortOrderId = "0";
+          // I dont think this is correct, tradeVec[i] may need to be reset
+          entryVec.push_back(tradeVec[i]);
+          tradeVec.erase(tradeVec.begin() + i);
           // Removes restore.txt since this trade is done.
           std::ofstream resFile("restore.txt", std::ofstream::trunc);
           resFile.close();
         }
       }
-      if (params.verbose) logFile << '\n';
+      if (params.verbose)
+        logFile << '\n';
     }
     // Moves to the next iteration, unless
     // the maxmum is reached.
@@ -742,8 +870,9 @@ int main(int argc, char** argv) {
     // Exits if a 'stop_after_notrade' file is found
     // Warning: by default on GitHub the file has a underscore
     // at the end, so Blackbird is not stopped by default.
+    //FIXME: this is brokenish, could make a bool
     std::ifstream infile("stop_after_notrade");
-    if (infile && !inMarket) {
+    if (infile && tradeVec.empty()) {
       logFile << "Exit after last trade (file stop_after_notrade found)\n";
       stillRunning = false;
     }
