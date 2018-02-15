@@ -399,6 +399,8 @@ int main(int argc, char** argv) {
   logFile << "[ Current balances ]" << std::endl;
   // Gets the the balances from every exchange
   // This is only done when not in Demo mode.
+  // This is the first curl on exchanges
+  ///TODO: Currency INFO abstract exchange
   std::vector<Balance> balance(numExch);
   if (!params.demoMode)
     std::transform(getAvail, getAvail + numExch,
@@ -406,8 +408,8 @@ int main(int argc, char** argv) {
                    [&params]( decltype(*getAvail) apply )
                    {
                      Balance tmp {};
-                     tmp.leg1 = apply(params, "btc");
-                     tmp.leg2 = apply(params, "usd");
+                     tmp.leg1 = apply(params, "btc"); //FIXME: Currency hardcode
+                     tmp.leg2 = apply(params, "usd"); //FIXME: Currency hardcode
                      return tmp;
                    } );
 

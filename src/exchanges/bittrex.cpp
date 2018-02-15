@@ -62,7 +62,7 @@ double getAvail(Parameters &params, std::string currency)
     cur_str += "BTC";
   }
   unique_json root { authRequest(params, "/api/v1.1/account/getbalance", cur_str)};
-
+  //FIXME: theres no error checking here
   double available = json_number_value(json_object_get(json_object_get(root.get(), "result"),"Available"));
   return available;
 }

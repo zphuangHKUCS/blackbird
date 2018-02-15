@@ -25,6 +25,8 @@ json_t* authRequest(Parameters& params, std::string method, std::string request,
 
 std::string gettime();
 
+std::string pairTransform(Parameters& params);
+
 void testGDAX();
 
 }

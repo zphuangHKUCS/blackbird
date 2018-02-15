@@ -27,9 +27,10 @@ quote_t getQuote(Parameters &params)
   auto &exchange = queryHandle(params);
   std::string pair;
   pair = "/products/";
-  pair += "BTC";
-  pair += "-";
-  pair += "USD";
+  //pair += "BTC";
+  //pair += "-";
+  //pair += "USD";
+  pair += pairTransform(params);
   pair += "/ticker";
   unique_json root{exchange.getRequest(pair)};
   const char *bid, *ask;
@@ -60,6 +61,7 @@ double getAvail(Parameters &params, std::string currency)
       if (currstr != NULL)
       {
         available = atof(currstr);
+        break;
       }
       else
       {
@@ -229,6 +231,17 @@ std::string gettime()
   snprintf(buff5, 40, "%lld.%d000", result2, milli);
   return buff5;
 }
+
+std::string pairTransform(Parameters& params){
+  std::string leg1 = params.leg1.c_str();
+  std::string leg2 = params.leg2.c_str();
+  std::transform(leg1.begin(), leg1.end(), leg1.begin(), ::toupper);
+  std::transform(leg2.begin(),leg2.end(), leg2.begin(), ::toupper);
+  std::string marketurl = leg1 + "-" +leg2;
+  return marketurl;
+}
+
+
 void testGDAX()
 {
 
