@@ -47,15 +47,14 @@ quote_t getQuote(Parameters &params)
 double getAvail(Parameters &params, std::string currency)
 {
   unique_json root{authRequest(params, "GET", "/accounts", "")};
+  currency = symbolTransform(params, currency);
   size_t arraySize = json_array_size(root.get());
   double available = 0.0;
-  std::transform(currency.begin(), currency.end(), currency.begin(), ::toupper);
-  const char * curr_ = currency.c_str();
   const char *currstr;
   for (size_t i = 0; i < arraySize; i++)
   {
     std::string tmpCurrency = json_string_value(json_object_get(json_array_get(root.get(), i), "currency"));
-    if (tmpCurrency.compare(curr_) == 0)
+    if (tmpCurrency.compare(currency.c_str()) == 0)
     {
       currstr = json_string_value(json_object_get(json_array_get(root.get(), i), "available"));
       if (currstr != NULL)
@@ -247,7 +246,7 @@ std::string symbolTransform(Parameters& params, std::string leg){
   } else if (leg.compare("USD")==0 || leg.compare("USDT")==0){
     return "USD"; //WARNING: hard transform usd-> USDT not appropriate for all users
   } else {
-    *params.logFile << "<Bittrex> WARNING: Currency not supported." << std::endl;
+    *params.logFile << "<GDAX> WARNING: Currency not supported." << std::endl;
     return "";
   }
 }
