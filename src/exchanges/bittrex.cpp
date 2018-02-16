@@ -52,7 +52,7 @@ quote_t getQuote(Parameters &params)
 
 double getAvail(Parameters &params, std::string currency)
 {
-  symbolTransform(params, currency);
+  currency = symbolTransform(params, currency);
   //cur_str += "currency=";
   std::string cur_str = "currency=" + currency;
 

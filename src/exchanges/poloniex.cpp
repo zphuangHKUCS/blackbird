@@ -51,11 +51,8 @@ quote_t getQuote(Parameters &params)
 
 double getAvail(Parameters &params, std::string currency)
 {
-  std::transform(begin(currency), end(currency), begin(currency), ::toupper);
+  currency = symbolTransform(params, currency);
   std::string options = "account=exchange";
-  if (currency.compare("USD")==0) {
-    currency += "T";
-  }
   unique_json root { authRequest(params, "returnAvailableAccountBalances", options) };
   auto funds = json_string_value(json_object_get(json_object_get(root.get(), "exchange"), currency.c_str()));
   return funds ? std::stod(funds) : 0.0;
@@ -137,6 +134,18 @@ double getLimitPrice(Parameters& params, double volume, bool isBid) {
     i++;
   }
   return p;
+}
+
+std::string symbolTransform(Parameters& params, std::string leg){
+  std::transform(leg.begin(),leg.end(), leg.begin(), ::toupper);
+  if (leg.compare("BTC")==0){
+    return "BTC";
+  } else if (leg.compare("USD")==0 || leg.compare("USDT")==0){
+    return "USDT"; //WARNING: hard transform usd-> USDT not appropriate for all users
+  } else {
+    *params.logFile << "<Bittrex> WARNING: Currency not supported." << std::endl;
+    return "";
+  }
 }
 
 json_t* authRequest(Parameters &params, const char *request, const std::string &options)
