@@ -45,17 +45,8 @@ quote_t getQuote(Parameters &params)
 
 double getAvail(Parameters &params, std::string currency)
 {
-    std::transform(currency.begin(), currency.end(), currency.begin(), ::toupper);
-    std::string cur_str;
-    //cur_str += "symbol=BTCUSDT";
-    if (currency.compare("USD") == 0)
-    {
-        cur_str += "USDT";
-    }
-    else
-    {
-        cur_str += currency.c_str();
-    }
+
+    symbolTransform(params, currency);
 
     unique_json root{authRequest(params, "GET", "/api/v3/account", "")};
     size_t arraySize = json_array_size(json_object_get(root.get(), "balances"));
@@ -66,7 +57,7 @@ double getAvail(Parameters &params, std::string currency)
     for (size_t i = 0; i < arraySize; i++)
     {
         std::string tmpCurrency = json_string_value(json_object_get(json_array_get(balances, i), "asset"));
-        if (tmpCurrency.compare(cur_str.c_str()) == 0)
+        if (tmpCurrency.compare(currency) == 0)
         {
             currstr = json_string_value(json_object_get(json_array_get(balances, i), "free"));
             if (currstr != NULL)
@@ -224,6 +215,17 @@ static std::string getSignature(Parameters &params, std::string payload)
     return api_sign_header;
 }
 
+std::string symbolTransform(Parameters& params, std::string leg){
+    std::transform(leg.begin(),leg.end(), leg.begin(), ::toupper);
+    if (leg.compare("USD")==0 || leg.compare("USDT")){
+        return "USDT"; //WARNING: allowing hardswap of USDT, not applicable to all users
+    } else if (leg.compare("BTC")==0){
+        return "BTC";
+    } else {
+        *params.logFile << "<Binance> WARNING: Currency not supported" << std::endl;
+        return "";
+    }
+}
 void testBinance()
 {
 
