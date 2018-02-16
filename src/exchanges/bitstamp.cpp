@@ -68,7 +68,7 @@ double getAvail(Parameters& params, std::string currency)
   }
   double availability = 0.0;
   const char* returnedText = NULL;
-  symbolTransform(params, leg);
+  symbolTransform(params, currency);
   if (currency == "btc")
   {
     returnedText = json_string_value(json_object_get(root.get(), "btc_balance"));

@@ -46,7 +46,7 @@ quote_t getQuote(Parameters &params)
 double getAvail(Parameters &params, std::string currency)
 {
 
-    symbolTransform(params, currency);
+    currency = symbolTransform(params, currency);
 
     unique_json root{authRequest(params, "GET", "/api/v3/account", "")};
     size_t arraySize = json_array_size(json_object_get(root.get(), "balances"));
@@ -217,7 +217,7 @@ static std::string getSignature(Parameters &params, std::string payload)
 
 std::string symbolTransform(Parameters& params, std::string leg){
     std::transform(leg.begin(),leg.end(), leg.begin(), ::toupper);
-    if (leg.compare("USD")==0 || leg.compare("USDT")){
+    if (leg.compare("USD")==0 || leg.compare("USDT")==0){
         return "USDT"; //WARNING: allowing hardswap of USDT, not applicable to all users
     } else if (leg.compare("BTC")==0){
         return "BTC";

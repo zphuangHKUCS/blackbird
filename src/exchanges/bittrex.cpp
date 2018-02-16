@@ -53,8 +53,10 @@ quote_t getQuote(Parameters &params)
 double getAvail(Parameters &params, std::string currency)
 {
   symbolTransform(params, currency);
-  cur_str += "currency=";
-  unique_json root { authRequest(params, "/api/v1.1/account/getbalance", currency)};
+  //cur_str += "currency=";
+  std::string cur_str = "currency=" + currency;
+
+  unique_json root { authRequest(params, "/api/v1.1/account/getbalance", cur_str)};
   //FIXME: theres no error checking here
   double available = json_number_value(json_object_get(json_object_get(root.get(), "result"),"Available"));
   return available;
@@ -189,7 +191,7 @@ std::string symbolTransform(Parameters& params, std::string leg){
   std::transform(leg.begin(),leg.end(), leg.begin(), ::toupper);
   if (leg.compare("BTC")==0){
     return "BTC";
-  } else if (leg.compare("USD")==0 || leg.compare("USDT")==0){{
+  } else if (leg.compare("USD")==0 || leg.compare("USDT")==0){
     return "USDT"; //WARNING: hard transform usd-> USDT not appropriate for all users
   } else {
     *params.logFile << "<Bittrex> WARNING: Currency not supported." << std::endl;

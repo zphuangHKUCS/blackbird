@@ -51,19 +51,19 @@ quote_t getQuote(Parameters &params)
 double getAvail(Parameters &params, std::string currency)
 {
   double available = 0.00;
-  if (currency.compare("usd") == 0) {
-    unique_json root { authRequest(params, "/0/private/TradeBalance", "asset=ZUSD")};
+  currency = symbolTransform(params, currency);
+  //kraken happens to still need an if/then because we need margin free balance
+  if (currency.compare("ZUSD") == 0) {
+    unique_json root { authRequest(params, "/0/private/TradeBalance", "asset="+currency)};
     json_t *result = json_object_get(root.get(), "result");
     const char * avail_str = json_string_value(json_object_get(result, "mf"));
     available = avail_str ? atof(avail_str) : 0.0;
-  } else if (currency.compare("btc") == 0) {
+  } else {
     unique_json root { authRequest(params, "/0/private/Balance")};
     json_t *result = json_object_get(root.get(),"result");
-    const char * avail_str = json_string_value(json_object_get(result, "XXBT"));
+    const char * avail_str = json_string_value(json_object_get(result, currency.c_str()));
     available = avail_str ? atof(avail_str) : 0.0;
-  } else {
-    *params.logFile << "<Kraken> Currency not supported" << std::endl;
-  }
+  } 
   return available;
 }
 
@@ -236,7 +236,7 @@ json_t *authRequest(Parameters &params, std::string request, std::string options
                               post_data);
 }
 
-std::string symbolTransformer(Parameters& params, std::string currency){
+std::string symbolTransform(Parameters& params, std::string currency){
   if (currency.compare("BTC")==0){
     return "XXBT";
   
