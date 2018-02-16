@@ -55,7 +55,7 @@ quote_t getQuote(Parameters &params)
 double getAvail(Parameters& params, std::string currency)
 {
   unique_json root { authRequest(params, "/v1/balances", "") };
-
+  symbolTransform(params, currency);
   double availability = 0.0;
   for (size_t i = json_array_size(root.get()); i--;)
   {
@@ -157,6 +157,17 @@ double getLimitPrice(Parameters& params, double volume, bool isBid)
   return p;
 }
 
+std::string symbolTransform(Parameters& params, std::string leg){
+  std::transform(leg.begin(),leg.end(), leg.begin(), ::tolower);
+  if (leg.compare("btc")==0){
+    return "btc";
+  } else if (leg.compare("usd")==0){
+    return "usd";
+  } else {
+    *params.logFile << "<Bitfinex> WARNING: Currency not supported." << std::endl;
+    return "";
+  }
+}
 json_t* authRequest(Parameters &params, std::string request, std::string options)
 {
   using namespace std;
