@@ -52,16 +52,9 @@ quote_t getQuote(Parameters &params)
 
 double getAvail(Parameters &params, std::string currency)
 {
-  std::string cur_str;
-  //std::transform(currency.begin(), currency.end(), currency.begin(), ::toupper);
+  symbolTransform(params, currency);
   cur_str += "currency=";
-  if (currency.compare("usd")==0){
-    cur_str += "USDT";
-  }
-  else {
-    cur_str += "BTC";
-  }
-  unique_json root { authRequest(params, "/api/v1.1/account/getbalance", cur_str)};
+  unique_json root { authRequest(params, "/api/v1.1/account/getbalance", currency)};
   //FIXME: theres no error checking here
   double available = json_number_value(json_object_get(json_object_get(root.get(), "result"),"Available"));
   return available;
@@ -190,6 +183,18 @@ double getLimitPrice(Parameters& params, double volume, bool isBid) {
   }
 
   return p;
+}
+
+std::string symbolTransform(Parameters& params, std::string leg){
+  std::transform(leg.begin(),leg.end(), leg.begin(), ::toupper);
+  if (leg.compare("BTC")==0){
+    return "BTC";
+  } else if (leg.compare("USD")==0 || leg.compare("USDT")==0){{
+    return "USDT"; //WARNING: hard transform usd-> USDT not appropriate for all users
+  } else {
+    *params.logFile << "<Bittrex> WARNING: Currency not supported." << std::endl;
+    return "";
+  }
 }
 
 // build auth request - needs to append apikey, nonce, and calculate HMAC 512 hash and include it under api sign header
