@@ -431,7 +431,6 @@ int main(int argc, char** argv) {
   // Gets the the balances from every exchange
   // This is only done when not in Demo mode.
   // This is the first curl on exchanges
-  ///TODO: Currency INFO abstract exchange
   std::vector<Balance> balance(numExch);
   if (!params.demoMode)
     std::transform(getAvail, getAvail + numExch,
@@ -700,7 +699,7 @@ int main(int argc, char** argv) {
           break;
         }
         // We are in market now, meaning we have positions on leg1 (the hedged on)
-        // We store the details of that first trade into the Result structure.
+        // We store the details of that first trade into the entryVec (Result Structure).
         resultId++;
         entryVec[i].id = resultId;
         entryVec[i].entryTime = currTime;
@@ -734,17 +733,17 @@ int main(int argc, char** argv) {
         }
         // Both orders are now fully executed
         logFile << "Done" << std::endl;
-
-        // updates the balances of executed exchanges
-        balance[entryVec[i].idExchLong].leg1 = getAvail[entryVec[i].idExchLong](params, params.leg1.c_str()); // FIXME: currency hard-coded
+        // add the leg2TotalBalance to the entryVec for export to db
+        // we already know it so no curl needed
+        entryVec[i].leg2TotBalanceBefore = balance[entryVec[i].idExchShort].leg2 + balance[entryVec[i].idExchLong].leg2;
+        // updates the balances of the executed exchanges
+        balance[entryVec[i].idExchLong].leg1 = getAvail[entryVec[i].idExchLong](params, params.leg1.c_str()); // Technically we know this and dont need to curl
+        balance[entryVec[i].idExchLong].leg2 = getAvai[entryVec[i].idExchLong](params, params.leg2.c_str()); // FIXME: currency hard-coded
         balance[entryVec[i].idExchShort].leg2 = getAvail[entryVec[i].idExchShort](params, params.leg2.c_str()); // FIXME: currency hard-coded
-        
+        balance[entryVec[i].idExchShort].leg1 = getAvail[entryVec[i].idExchShort](params, params.leg1.c_str()); // Technically we know this and dont need to curl
         // Adds the tradeIds to the entryVec for export to DB
         entryVec[i].longExchTradeId = longOrderId;
         entryVec[i].shortExchTradeId = shortOrderId;
-        // add the leg2TotalBalance to the entryVec for export to db
-        // we just calculated it for balance so no cURL needed.
-        entryVec[i].leg2TotBalanceBefore = balance[entryVec[i].idExchShort].leg2;
         // Stores the partial result to db file in case
         // the program exits before closing the position.
         if (addTradesToDb(entryVec[i], params, 0) != 0)
@@ -837,15 +836,19 @@ int main(int argc, char** argv) {
           }
           logFile << "Done\n"
                   << std::endl;
-          // we're really only interested in updating the current pairings balances
-
+          //we calculate the new balances, we really already knew idExchLong leg1 and idExchShort leg2 exposure (as they are the same as volume)
+          balance[tradeVec[i].idExchLong].leg1After = getAvail[tradeVec[i].idExchLong](params,params.leg2.c_str());
+          balance[tradeVec[i].idExchLong].leg2After = getAvail[tradeVec[i].idExchLong](params, params.leg2.c_str());
+          balance[tradeVec[i].idExchShort].leg1After = getAvail[tradeVec[i].idExchShort](params, params.leg1.c_str());
           balance[tradeVec[i].idExchShort].leg2After = getAvail[tradeVec[i].idExchShort](params, params.leg2.c_str());
-          balance[tradeVec[i].idExchLong].leg1After = getAvail[tradeVec[i].idExchLong](params, params.leg1.c_str());
-          
+  
+          // this is confusing and should be cleaned
           logFile << "New balance on " << tradeVec[i].exchNameLong << ":  \t";
           logFile.precision(2);
-          logFile << balance[tradeVec[i].idExchShort].leg2After << " " << params.leg2 << " (perf " << balance[i].leg2After - balance[i].leg2 << "), ";
-          logFile << std::setprecision(6) << balance[i].leg1After << " " << params.leg1 << "\n";
+          logFile << balance[tradeVec[i].idExchShort].leg2After << " " << params.leg2 << " (perf " 
+          << balance[tradeVec[i].idExchLong].leg2After - balance[tradeVec[i].idExchLong].leg2 << "), ";
+          logFile << std::setprecision(6) 
+          << balance[tradeVec[i].idExchLong].leg1After << " " << params.leg1 << "\n";
 
           logFile << "New balance on " << tradeVec[i].exchNameShort << ": \t";
           logFile.precision(2);
@@ -869,17 +872,19 @@ int main(int argc, char** argv) {
           logFile << std::endl; */
           // Update total leg2 balance
           //tradeVec[i].leg2TotBalanceBefore += balance[tradeVec[i].idExchShort]
-          for (int i = 0; i < numExch; ++i)
+          // update the tradeVec for the balance after the trade
+          tradeVec[i].leg2TotBalanceAfter = balance[tradeVec[i].idExchLong].leg2After + balance[tradeVec[i].idExchShort].leg2After;
+          /*for (int i = 0; i < numExch; ++i)
           {
             tradeVec[i].leg2TotBalanceBefore += balance[i].leg2;
             tradeVec[i].leg2TotBalanceAfter += balance[i].leg2After;
-          }
+          }*/
           // Update current balances
-          for (int i = 0; i < numExch; ++i)
+          /*for (int i = 0; i < numExch; ++i)
           {
             balance[i].leg2 = balance[i].leg2After;
             balance[i].leg1 = balance[i].leg1After;
-          }
+          }*/
 
           // Prints the result in the result CSV file
           logFile.precision(2);
@@ -925,9 +930,6 @@ int main(int argc, char** argv) {
           // I dont think this is correct, tradeVec[i] may need to be reset
           entryVec.push_back(tradeVec[i]);
           tradeVec.erase(tradeVec.begin() + i);
-          // Removes restore.txt since this trade is done.
-          std::ofstream resFile("restore.txt", std::ofstream::trunc);
-          resFile.close();
         }
       }
       if (params.verbose)
