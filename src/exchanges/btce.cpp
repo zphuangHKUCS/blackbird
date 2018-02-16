@@ -54,7 +54,7 @@ quote_t getQuote(Parameters& params)
 
 double getAvail(Parameters &params, std::string currency)
 {
-  symbolTransform(params, currency);
+  currency = symbolTransform(params, currency);
   unique_json root { authRequest(params, "getInfo") };
   auto funds = json_object_get(json_object_get(root.get(), "funds"), currency.c_str());
   return json_number_value(funds);
