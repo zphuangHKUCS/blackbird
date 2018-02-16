@@ -236,6 +236,22 @@ json_t *authRequest(Parameters &params, std::string request, std::string options
                               post_data);
 }
 
+std::string symbolTransformer(Parameters& params, std::string currency){
+  if (currency.compare("BTC")==0){
+    return "XXBT";
+  
+  } else if (currency.compare("USD")==0){
+    return "ZUSD";
+
+  } else if (currency.compare("ETH")==0){
+    return "XETH";
+
+  } else { 
+    std::cout << "<Kraken> WARNING: Currency not supported." << std::endl;
+    return "";
+  }
+}
+
 void testKraken()
 {
 

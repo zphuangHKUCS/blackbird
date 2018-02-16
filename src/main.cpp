@@ -854,8 +854,8 @@ int main(int argc, char** argv) {
           logFile.precision(2);
           logFile << balance[tradeVec[i].idExchShort].leg2After << " " << params.leg2 << " (perf "
           << balance[tradeVec[i].idExchShort].leg2After - balance[tradeVec[i].idExchShort].leg2 << "), ";
-          logFile << std::setPrecision(6)
-          << balance[tradeVec[i].idExchShort].leg2After - balance[tradeVec[i].idExchShprt].leg2 << "\n";
+          logFile << std::setprecision(6)
+          << balance[tradeVec[i].idExchShort].leg2After - balance[tradeVec[i].idExchShort].leg2 << "\n";
           logFile << std:: endl;
           /*old way
           for (int i = 0; i < numExch; ++i)
