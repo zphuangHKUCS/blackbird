@@ -31,6 +31,8 @@ int borrowBtc(Parameters& params, double amount);
 
 void repayBtc(Parameters& params, int borrowId);
 
+std::string symbolTransform(Parameters& params, std::string leg);
+
 }
 
 #endif

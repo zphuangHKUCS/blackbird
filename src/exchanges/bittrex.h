@@ -23,6 +23,9 @@ double getActivePos(Parameters& params, std::string orderId="");
 double getLimitPrice(Parameters& params, double volume, bool isBid);
 
 void testBittrex();
+
+std::string symbolTransform(Parameters& params, std::string leg);
+
 }
 
 #endif

@@ -29,6 +29,8 @@ std::string pairTransform(Parameters& params);
 
 void testGDAX();
 
+std::string symbolTransform(Parameters& params, std::string leg);
+
 }
 
 #endif

@@ -27,6 +27,8 @@ double getLimitPrice(Parameters& params, double volume, bool isBid);
 
 void testExmo();
 
+std::string symbolTransform(Parameters& params, std::string leg);
+
 }
 
 #endif
