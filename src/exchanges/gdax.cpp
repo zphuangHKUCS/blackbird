@@ -240,6 +240,17 @@ std::string pairTransform(Parameters& params){
   std::string marketurl = leg1 + "-" +leg2;
   return marketurl;
 }
+std::string symbolTransform(Parameters& params, std::string leg){
+  std::transform(leg.begin(),leg.end(), leg.begin(), ::toupper);
+  if (leg.compare("BTC")==0){
+    return "BTC";
+  } else if (leg.compare("USD")==0 || leg.compare("USDT")==0){
+    return "USD"; //WARNING: hard transform usd-> USDT not appropriate for all users
+  } else {
+    *params.logFile << "<Bittrex> WARNING: Currency not supported." << std::endl;
+    return "";
+  }
+}
 
 
 void testGDAX()

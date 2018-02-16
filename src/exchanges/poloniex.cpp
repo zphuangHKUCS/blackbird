@@ -143,7 +143,7 @@ std::string symbolTransform(Parameters& params, std::string leg){
   } else if (leg.compare("USD")==0 || leg.compare("USDT")==0){
     return "USDT"; //WARNING: hard transform usd-> USDT not appropriate for all users
   } else {
-    *params.logFile << "<Bittrex> WARNING: Currency not supported." << std::endl;
+    *params.logFile << "<Poloniex> WARNING: Currency not supported." << std::endl;
     return "";
   }
 }
