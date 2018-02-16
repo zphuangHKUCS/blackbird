@@ -19,6 +19,8 @@
 #include "exchanges/cexio.h"
 #include "exchanges/bittrex.h"
 #include "exchanges/binance.h"
+#include "exchanges/nulllongexch.h"
+#include "exchanges/nullshortexch.h"
 #include "utils/send_email.h"
 #include "getpid.h"
 
@@ -103,14 +105,14 @@ int main(int argc, char** argv) {
 
   // Function arrays containing all the exchanges functions
   // using the 'typedef' declarations from above.
-  getQuoteType getQuote[13];
-  getAvailType getAvail[13];
-  sendOrderType sendLongOrder[13];
-  sendOrderType sendShortOrder[13];
-  isOrderCompleteType isOrderComplete[13];
-  getActivePosType getActivePos[13];
-  getLimitPriceType getLimitPrice[13];
-  std::string dbTableName[13];
+  getQuoteType getQuote[15];
+  getAvailType getAvail[15];
+  sendOrderType sendLongOrder[15];
+  sendOrderType sendShortOrder[15];
+  isOrderCompleteType isOrderComplete[15];
+  getActivePosType getActivePos[15];
+  getLimitPriceType getLimitPrice[15];
+  std::string dbTableName[15];
 
 
   // Adds the exchange functions to the arrays for all the defined exchanges
@@ -329,6 +331,35 @@ int main(int argc, char** argv) {
 
     index++;
   }
+  if (params.nullLongExchEnable)
+  {
+    params.addExchange("NullLongExch", params.nullLongExchFees, false, true);
+    getQuote[index] = NullLongExch::getQuote;
+    getAvail[index] = NullLongExch::getAvail;
+    sendLongOrder[index] = NullLongExch::sendLongOrder;
+    isOrderComplete[index] = NullLongExch::isOrderComplete;
+    getActivePos[index] = NullLongExch::getActivePos;
+    getLimitPrice[index] = NullLongExch::getLimitPrice;
+    dbTableName[index] = "NullLongExch";
+    createTable(dbTableName[index], params);
+
+    index++;
+  }
+  if (params.nullShortExchEnable)
+  {
+    params.addExchange("NullShortExch", params.nullShortExchFees, true, true);
+    getQuote[index] = NullShortExch::getQuote;
+    getAvail[index] = NullShortExch::getAvail;
+    sendLongOrder[index] = NullShortExch::sendLongOrder;
+    sendShortOrder[index] = NullShortExch::sendShortOrder;
+    isOrderComplete[index] = NullShortExch::isOrderComplete;
+    getActivePos[index] = NullShortExch::getActivePos;
+    getLimitPrice[index] = NullShortExch::getLimitPrice;
+    dbTableName[index] = "NullShortExch";
+    createTable(dbTableName[index], params);
+
+    index++;
+  }
   // We need at least two exchanges to run Blackbird
   if (index < 2) {
     std::cout << "ERROR: Blackbird needs at least two Bitcoin exchanges. Please edit the config.json file to add new exchanges\n" << std::endl;
@@ -415,12 +446,12 @@ int main(int argc, char** argv) {
 
   // Checks for a restore.txt file, to see if
   // the program exited with an open position.
-  Result m;
-  m.reset();
+  //Result m;
+  //m.reset();
 
   //creates vectors to store entry opportunities and in market positions
-  std::vector<Result> entryVec;
-  entryVec.reserve(realNum);
+  std::vector<Result> entryVec(realNum);
+  //entryVec.reserve(realNum);
   std::vector<Result> tradeVec;
   tradeVec.reserve(realNum);
   // Creates blank entryVec entries for every possible combination
@@ -433,9 +464,9 @@ int main(int argc, char** argv) {
         if (btcVec[j].getHasShort())
         {
           // all of the combinations will be loaded into vectors with exchIds
-          m.idExchLong = i;
-          m.idExchShort = j;
-          entryVec.push_back(m);
+          entryVec[i].idExchLong = i;
+          entryVec[i].idExchShort = j;
+          //entryVec.push_back(m);
         }
       }
     }
@@ -457,7 +488,8 @@ int main(int argc, char** argv) {
   //FIXME: there are better ways to do this for sure...
   if (!tradeVec.empty()){
     for (size_t i = 0; i< tradeVec.size(); i++){
-      m.removePair(entryVec,tradeVec[i].idExchLong);
+      Result tmp {};
+      tmp.removePair(entryVec,tradeVec[i].idExchLong);
     }
   }
 
@@ -513,7 +545,7 @@ int main(int argc, char** argv) {
   bool stillRunning = true;
   time_t currTime;
   time_t diffTime;
-
+  
   // Main analysis loop
   while (stillRunning) {
     currTime = mktime(&timeinfo);
@@ -707,10 +739,13 @@ int main(int argc, char** argv) {
         balance[entryVec[i].idExchLong].leg1 = getAvail[entryVec[i].idExchLong](params, params.leg1.c_str()); // FIXME: currency hard-coded
         balance[entryVec[i].idExchShort].leg2 = getAvail[entryVec[i].idExchShort](params, params.leg2.c_str()); // FIXME: currency hard-coded
         
-        // Adding new parameters to result file to keep track of executed trades
+        // Adds the tradeIds to the entryVec for export to DB
         entryVec[i].longExchTradeId = longOrderId;
         entryVec[i].shortExchTradeId = shortOrderId;
-        // Stores the partial result to file in case
+        // add the leg2TotalBalance to the entryVec for export to db
+        // we just calculated it for balance so no cURL needed.
+        entryVec[i].leg2TotBalanceBefore = balance[entryVec[i].idExchShort].leg2;
+        // Stores the partial result to db file in case
         // the program exits before closing the position.
         if (addTradesToDb(entryVec[i], params, 0) != 0)
         {
@@ -718,8 +753,11 @@ int main(int argc, char** argv) {
                     << std::endl;
           exit(EXIT_FAILURE);
         };
+        //push the entered position into the tradeVec
         tradeVec.push_back(entryVec[i]);
+        //erase the pairing from the entryVec
         entryVec.erase(entryVec.begin() + i);
+        //reset the orderIds
         longOrderId = "0";
         shortOrderId = "0";
         break;
@@ -740,6 +778,8 @@ int main(int argc, char** argv) {
         // An exit opportunity has been found!
         // We check the current leg1 exposure
         std::vector<double> btcUsed(realNum);
+        // use getActivePos to query exchanges with our old tradeId
+        // ensures we only sell the amount of <currency> we were executed for
         btcUsed[tradeVec[i].idExchLong] = getActivePos[tradeVec[i].idExchLong](params, tradeVec[i].longExchTradeId);
         btcUsed[tradeVec[i].idExchShort] = getActivePos[tradeVec[i].idExchShort](params, tradeVec[i].shortExchTradeId);
         // Checks the volumes and computes the limit prices that will be sent to the exchanges
@@ -797,12 +837,28 @@ int main(int argc, char** argv) {
           }
           logFile << "Done\n"
                   << std::endl;
+          // we're really only interested in updating the current pairings balances
 
+          balance[tradeVec[i].idExchShort].leg2After = getAvail[tradeVec[i].idExchShort](params, params.leg2.c_str());
+          balance[tradeVec[i].idExchLong].leg1After = getAvail[tradeVec[i].idExchLong](params, params.leg1.c_str());
+          
+          logFile << "New balance on " << tradeVec[i].exchNameLong << ":  \t";
+          logFile.precision(2);
+          logFile << balance[tradeVec[i].idExchShort].leg2After << " " << params.leg2 << " (perf " << balance[i].leg2After - balance[i].leg2 << "), ";
+          logFile << std::setprecision(6) << balance[i].leg1After << " " << params.leg1 << "\n";
+
+          logFile << "New balance on " << tradeVec[i].exchNameShort << ": \t";
+          logFile.precision(2);
+          logFile << balance[tradeVec[i].idExchShort].leg2After << " " << params.leg2 << " (perf "
+          << balance[tradeVec[i].idExchShort].leg2After - balance[tradeVec[i].idExchShort].leg2 << "), ";
+          logFile << std:: endl;
+          /*old way
           for (int i = 0; i < numExch; ++i)
           {
             balance[i].leg2After = getAvail[i](params, params.leg2.c_str()); // FIXME: currency hard-coded
             balance[i].leg1After = getAvail[i](params, params.leg1.c_str()); // FIXME: currency hard-coded
-          }
+          }*/
+          /* old way
           for (int i = 0; i < numExch; ++i)
           {
             logFile << "New balance on " << params.exchName[i] << ":  \t";
@@ -810,8 +866,9 @@ int main(int argc, char** argv) {
             logFile << balance[i].leg2After << " " << params.leg2 << " (perf " << balance[i].leg2After - balance[i].leg2 << "), ";
             logFile << std::setprecision(6) << balance[i].leg1After << " " << params.leg1 << "\n";
           }
-          logFile << std::endl;
+          logFile << std::endl; */
           // Update total leg2 balance
+          //tradeVec[i].leg2TotBalanceBefore += balance[tradeVec[i].idExchShort]
           for (int i = 0; i < numExch; ++i)
           {
             tradeVec[i].leg2TotBalanceBefore += balance[i].leg2;
