@@ -438,8 +438,8 @@ int main(int argc, char** argv) {
                    [&params]( decltype(*getAvail) apply )
                    {
                      Balance tmp {};
-                     tmp.leg1 = apply(params, "btc"); //FIXME: Currency hardcode
-                     tmp.leg2 = apply(params, "usd"); //FIXME: Currency hardcode
+                     tmp.leg1 = apply(params, params.leg1.c_str()); 
+                     tmp.leg2 = apply(params, params.leg2.c_str()); 
                      return tmp;
                    } );
 
