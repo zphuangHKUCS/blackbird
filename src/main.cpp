@@ -738,7 +738,7 @@ int main(int argc, char** argv) {
         entryVec[i].leg2TotBalanceBefore = balance[entryVec[i].idExchShort].leg2 + balance[entryVec[i].idExchLong].leg2;
         // updates the balances of the executed exchanges
         balance[entryVec[i].idExchLong].leg1 = getAvail[entryVec[i].idExchLong](params, params.leg1.c_str()); // Technically we know this and dont need to curl
-        balance[entryVec[i].idExchLong].leg2 = getAvai[entryVec[i].idExchLong](params, params.leg2.c_str()); // FIXME: currency hard-coded
+        balance[entryVec[i].idExchLong].leg2 = getAvail[entryVec[i].idExchLong](params, params.leg2.c_str()); // FIXME: currency hard-coded
         balance[entryVec[i].idExchShort].leg2 = getAvail[entryVec[i].idExchShort](params, params.leg2.c_str()); // FIXME: currency hard-coded
         balance[entryVec[i].idExchShort].leg1 = getAvail[entryVec[i].idExchShort](params, params.leg1.c_str()); // Technically we know this and dont need to curl
         // Adds the tradeIds to the entryVec for export to DB
@@ -776,7 +776,7 @@ int main(int argc, char** argv) {
       {
         // An exit opportunity has been found!
         // We check the current leg1 exposure
-        std::vector<double> btcUsed(realNum);
+        std::vector<double> btcUsed(numExch);
         // use getActivePos to query exchanges with our old tradeId
         // ensures we only sell the amount of <currency> we were executed for
         btcUsed[tradeVec[i].idExchLong] = getActivePos[tradeVec[i].idExchLong](params, tradeVec[i].longExchTradeId);
@@ -854,6 +854,8 @@ int main(int argc, char** argv) {
           logFile.precision(2);
           logFile << balance[tradeVec[i].idExchShort].leg2After << " " << params.leg2 << " (perf "
           << balance[tradeVec[i].idExchShort].leg2After - balance[tradeVec[i].idExchShort].leg2 << "), ";
+          logFile << std::setPrecision(6)
+          << balance[tradeVec[i].idExchShort].leg2After - balance[tradeVec[i].idExchShprt].leg2 << "\n";
           logFile << std:: endl;
           /*old way
           for (int i = 0; i < numExch; ++i)

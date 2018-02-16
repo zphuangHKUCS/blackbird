@@ -19,10 +19,11 @@ quote_t getQuote(Parameters &params){
 
 double getAvail(Parameters &params, std::string currency) {
     double availBal = 0;
-    if (currency.compare("usd")==0){
+    std::transform(currency.begin(),currency.end(), currency.begin(), ::toupper);
+    if (currency.compare("USD")==0){
         availBal = 1000;
         return availBal;
-    } else if (currency.compare("btc")==0){
+    } else if (currency.compare("BTC")==0){
         availBal = 0.0;
     }
     return availBal;
