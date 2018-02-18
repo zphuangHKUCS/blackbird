@@ -103,24 +103,21 @@ std::string sendOrder(Parameters& params, std::string direction, double quantity
 bool isOrderComplete(Parameters& params, std::string orderId)
 {
   using namespace std;
-  if (orderId == "0") return false;
 
-  auto oId = stol(orderId);
-  ostringstream oss;
-  oss << "id=" << oId;
-  string options = oss.str();
-
-  unique_json root { authRequest(params, "/get_order/", options) };
-  auto remains = atof(json_string_value(json_object_get(root.get(), "remains")));
-  if (remains==0){
-    return true;
-  } else { 
-    auto dump = json_dumps(root.get(), 0);
-    *params.logFile << "<Cexio> Order Not Complete: " << dump << ")\n" << endl;
-    free(dump);
-    // cout << "REMAINS:" << remains << endl;
-    return false; 
+  bool tmp = true;
+  unique_json root { authRequest(params, "/open_orders/","") };
+  size_t arraySize = json_array_size(root.get());
+  for (size_t i = 0; i < arraySize; ++i){
+    string tmpid = json_string_value(json_object_get(json_array_get(root.get(),i),"id"));
+    if (tmpid.compare(orderId.c_str())==0){
+      *params.logFile << "<Cexio> Order Still open (ID: " << orderId << " )" << " Remaining: " 
+      << json_string_value(json_object_get(json_array_get(root.get(),i),"pending"))
+      << endl;
+      return tmp = false;
     }
+  }
+  if (tmp == true){ *params.logFile << "<Cexio> Order Complete (ID: " << orderId << " )" << endl;}
+  return tmp;
 }
 
 double getActivePos(Parameters& params, std::string orderId) { return getAvail(params, "btc"); }
@@ -188,7 +185,7 @@ std::string symbolTransform(Parameters& params, std::string leg){
 }
 void testCexio() {
   using namespace std;
-  Parameters params("blackbird.conf");
+  Parameters params("test.conf");
   params.logFile = new ofstream("./test.log" , ofstream::trunc);
 
   string orderId;
@@ -210,9 +207,9 @@ void testCexio() {
   cout << "Current ask limit price for 10 units: " << getLimitPrice(params, 10.0, false) << endl;
 
   // cout << "Sending buy order - TXID: " ;
-  // orderId = sendLongOrder(params, "buy", 0.002, 9510);
-  // cout << orderId << endl;
-  // cout << "Buy order is complete: " << isOrderComplete(params, orderId) << endl;
+   orderId = "5689142503";
+   cout << orderId << endl;
+   cout << "Buy order is complete: " << isOrderComplete(params, orderId) << endl;
   // cout << "Active positions (BTC): " << getActivePos(params) << endl;
 
   // cout << "Sending sell order - TXID: " ;
