@@ -100,7 +100,7 @@ int main(int argc, char** argv) {
   // We only trade BTC/USD for the moment
   if (params.leg1.compare("BTC") != 0 || params.leg2.compare("USD") != 0) {
     std::cout << "ERROR: Valid currency pair is only BTC/USD for now.\n" << std::endl;
-    exit(EXIT_FAILURE);
+//    exit(EXIT_FAILURE);
   }
 
   // Function arrays containing all the exchanges functions
@@ -449,7 +449,8 @@ int main(int argc, char** argv) {
   //m.reset();
 
   //creates vectors to store entry opportunities and in market positions
-  std::vector<Result> entryVec(realNum);
+  std::vector<Result> entryVec;
+  entryVec.reserve(realNum);
   //entryVec.reserve(realNum);
   std::vector<Result> tradeVec;
   tradeVec.reserve(realNum);
@@ -462,10 +463,11 @@ int main(int argc, char** argv) {
       {
         if (btcVec[j].getHasShort())
         {
+          Result tmp {};
           // all of the combinations will be loaded into vectors with exchIds
-          entryVec[i].idExchLong = i;
-          entryVec[i].idExchShort = j;
-          //entryVec.push_back(m);
+          tmp.idExchLong = i;
+          tmp.idExchShort = j;
+          entryVec.push_back(tmp);
         }
       }
     }
@@ -837,15 +839,15 @@ int main(int argc, char** argv) {
           logFile << "Done\n"
                   << std::endl;
           //we calculate the new balances, we really already knew idExchLong leg1 and idExchShort leg2 exposure (as they are the same as volume)
-          balance[tradeVec[i].idExchLong].leg1After = getAvail[tradeVec[i].idExchLong](params,params.leg2.c_str());
+          balance[tradeVec[i].idExchLong].leg1After = getAvail[tradeVec[i].idExchLong](params,params.leg1.c_str());
           balance[tradeVec[i].idExchLong].leg2After = getAvail[tradeVec[i].idExchLong](params, params.leg2.c_str());
           balance[tradeVec[i].idExchShort].leg1After = getAvail[tradeVec[i].idExchShort](params, params.leg1.c_str());
           balance[tradeVec[i].idExchShort].leg2After = getAvail[tradeVec[i].idExchShort](params, params.leg2.c_str());
   
-          // this is confusing and should be cleaned
+          // this is broken and wrong
           logFile << "New balance on " << tradeVec[i].exchNameLong << ":  \t";
           logFile.precision(2);
-          logFile << balance[tradeVec[i].idExchShort].leg2After << " " << params.leg2 << " (perf " 
+          logFile << balance[tradeVec[i].idExchLong].leg2After << " " << params.leg2 << " (perf " 
           << balance[tradeVec[i].idExchLong].leg2After - balance[tradeVec[i].idExchLong].leg2 << "), ";
           logFile << std::setprecision(6) 
           << balance[tradeVec[i].idExchLong].leg1After << " " << params.leg1 << "\n";
@@ -855,7 +857,7 @@ int main(int argc, char** argv) {
           logFile << balance[tradeVec[i].idExchShort].leg2After << " " << params.leg2 << " (perf "
           << balance[tradeVec[i].idExchShort].leg2After - balance[tradeVec[i].idExchShort].leg2 << "), ";
           logFile << std::setprecision(6)
-          << balance[tradeVec[i].idExchShort].leg2After - balance[tradeVec[i].idExchShort].leg2 << "\n";
+          << balance[tradeVec[i].idExchShort].leg1After << " " << params.leg1 << "\n";
           logFile << std:: endl;
           /*old way
           for (int i = 0; i < numExch; ++i)
@@ -874,8 +876,13 @@ int main(int argc, char** argv) {
           logFile << std::endl; */
           // Update total leg2 balance
           //tradeVec[i].leg2TotBalanceBefore += balance[tradeVec[i].idExchShort]
-          // update the tradeVec for the balance after the trade
+          // update the tradeVec for the balance after the trade for performance
           tradeVec[i].leg2TotBalanceAfter = balance[tradeVec[i].idExchLong].leg2After + balance[tradeVec[i].idExchShort].leg2After;
+          // update currency balances
+          balance[tradeVec[i].idExchLong].leg1 = balance[tradeVec[i].idExchLong].leg1After;
+          balance[tradeVec[i].idExchLong].leg2 = balance[tradeVec[i].idExchLong].leg2After;
+          balance[tradeVec[i].idExchShort].leg1 = balance[tradeVec[i].idExchShort].leg1After;
+          balance[tradeVec[i].idExchShort].leg2 = balance[tradeVec[i].idExchShort].leg2After;
           /*for (int i = 0; i < numExch; ++i)
           {
             tradeVec[i].leg2TotBalanceBefore += balance[i].leg2;
