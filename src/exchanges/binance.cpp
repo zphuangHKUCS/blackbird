@@ -11,6 +11,8 @@
 #include <ctime>
 #include <cctype>
 #include <cstdlib>
+#include <iomanip>
+
 
 namespace Binance
 {
@@ -48,21 +50,25 @@ double getAvail(Parameters &params, std::string currency)
 
     currency = symbolTransform(params, currency);
 
+
     unique_json root{authRequest(params, "GET", "/api/v3/account", "")};
     size_t arraySize = json_array_size(json_object_get(root.get(), "balances"));
     double available = 0.0;
     const char *currstr;
     auto balances = json_object_get(root.get(), "balances");
+
     // this loops 151 times....
     for (size_t i = 0; i < arraySize; i++)
     {
         std::string tmpCurrency = json_string_value(json_object_get(json_array_get(balances, i), "asset"));
         if (tmpCurrency.compare(currency) == 0)
+
         {
             currstr = json_string_value(json_object_get(json_array_get(balances, i), "free"));
             if (currstr != NULL)
             {
                 available = atof(currstr);
+
                 break;
             }
             else
@@ -127,6 +133,7 @@ bool isOrderComplete(Parameters &params, std::string orderId)
     return complete;
 }
 //TODO: Currency
+
 double getActivePos(Parameters &params, std::string orderId)
 {
   double activeSize = 0.0;
@@ -138,6 +145,7 @@ double getActivePos(Parameters &params, std::string orderId)
   }
 
   return activeSize;  
+
 }
 
 double getLimitPrice(Parameters &params, double volume, bool isBid)
@@ -215,6 +223,7 @@ static std::string getSignature(Parameters &params, std::string payload)
     return api_sign_header;
 }
 
+
 std::string symbolTransform(Parameters& params, std::string leg){
     std::transform(leg.begin(),leg.end(), leg.begin(), ::toupper);
     if (leg.compare("USD")==0 || leg.compare("USDT")==0){
@@ -226,6 +235,7 @@ std::string symbolTransform(Parameters& params, std::string leg){
         return "";
     }
 }
+
 void testBinance()
 {
 

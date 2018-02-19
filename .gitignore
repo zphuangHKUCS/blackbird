@@ -12,3 +12,4 @@ blackbird.db-journal
 test.conf
 *.db
 *.db-journal
+

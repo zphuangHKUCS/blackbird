@@ -19,8 +19,10 @@
 #include "exchanges/cexio.h"
 #include "exchanges/bittrex.h"
 #include "exchanges/binance.h"
+
 #include "exchanges/nulllongexch.h"
 #include "exchanges/nullshortexch.h"
+
 #include "utils/send_email.h"
 #include "getpid.h"
 
@@ -105,6 +107,7 @@ int main(int argc, char** argv) {
 
   // Function arrays containing all the exchanges functions
   // using the 'typedef' declarations from above.
+
   getQuoteType getQuote[15];
   getAvailType getAvail[15];
   sendOrderType sendLongOrder[15];
@@ -113,6 +116,7 @@ int main(int argc, char** argv) {
   getActivePosType getActivePos[15];
   getLimitPriceType getLimitPrice[15];
   std::string dbTableName[15];
+
 
 
   // Adds the exchange functions to the arrays for all the defined exchanges
@@ -331,6 +335,7 @@ int main(int argc, char** argv) {
 
     index++;
   }
+
   if (params.nullLongExchEnable)
   {
     params.addExchange("NullLongExch", params.nullLongExchFees, false, true);
@@ -358,6 +363,7 @@ int main(int argc, char** argv) {
 
     index++;
   }
+
   // We need at least two exchanges to run Blackbird
   if (index < 2) {
     std::cout << "ERROR: Blackbird needs at least two Bitcoin exchanges. Please edit the config.json file to add new exchanges\n" << std::endl;
