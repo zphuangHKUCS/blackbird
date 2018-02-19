@@ -102,7 +102,8 @@ int main(int argc, char** argv) {
   // We only trade BTC/USD for the moment
   if (params.leg1.compare("BTC") != 0 || params.leg2.compare("USD") != 0) {
     std::cout << "ERROR: Valid currency pair is only BTC/USD for now.\n" << std::endl;
-//    exit(EXIT_FAILURE);
+    // This will not cause failure on Parallelism branch. Proceed with caution.
+    // exit(EXIT_FAILURE);
   }
 
   // Function arrays containing all the exchanges functions
@@ -510,10 +511,10 @@ int main(int argc, char** argv) {
               << std::setprecision(6) << balance[i].leg1 << " " << params.leg1 << std::endl;
     }
     // FIXME: I do not use this safety -- does it have an effect?
-    if (balance[i].leg1 > 0.0050 && tradeVec.empty()) { // FIXME: hard-coded number
-      logFile << "ERROR: All " << params.leg1 << " accounts must be empty before starting Blackbird" << std::endl;
-      exit(EXIT_FAILURE);
-    }
+    //if (balance[i].leg1 > 0.0050 && tradeVec.empty()) { // FIXME: hard-coded number
+    //  logFile << "ERROR: All " << params.leg1 << " accounts must be empty before starting Blackbird" << std::endl;
+    //  exit(EXIT_FAILURE);
+    //}
   }
   logFile << std::endl;
   logFile << "[ Cash exposure ]\n";
