@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <ctime>
 #include <cctype>
+#include <iomanip>
 
 namespace Poloniex {
 
@@ -51,8 +52,10 @@ quote_t getQuote(Parameters &params)
 
 double getAvail(Parameters &params, std::string currency)
 {
+
   currency = symbolTransform(params, currency);
   std::string options = "account=exchange";
+
   unique_json root { authRequest(params, "returnAvailableAccountBalances", options) };
   auto funds = json_string_value(json_object_get(json_object_get(root.get(), "exchange"), currency.c_str()));
   return funds ? std::stod(funds) : 0.0;
@@ -90,6 +93,7 @@ bool isOrderComplete(Parameters& params, std::string orderId)
   }
   return true;
 }
+
 
 double getActivePos(Parameters& params, std::string orderId) {
   double activeSize = 0.0;
@@ -134,6 +138,7 @@ double getLimitPrice(Parameters& params, double volume, bool isBid) {
     i++;
   }
   return p;
+
 }
 
 std::string symbolTransform(Parameters& params, std::string leg){
@@ -146,6 +151,7 @@ std::string symbolTransform(Parameters& params, std::string leg){
     *params.logFile << "<Poloniex> WARNING: Currency not supported." << std::endl;
     return "";
   }
+
 }
 
 json_t* authRequest(Parameters &params, const char *request, const std::string &options)
