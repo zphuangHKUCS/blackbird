@@ -66,7 +66,7 @@ int main(int argc, char** argv) {
   // Replaces the C++ global locale with the user-preferred locale
   std::locale mylocale("");
   // Loads all the parameters
-  Parameters params("test.conf");
+  Parameters params("blackbird.conf");
   // Does some verifications about the parameters
   if (!params.demoMode) {
     if (!params.useFullExposure) {
