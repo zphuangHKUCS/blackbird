@@ -116,16 +116,17 @@ bool isOrderComplete(Parameters& params, std::string orderId)
 
 double getActivePos(Parameters& params, std::string orderId)
 {
-  unique_json root { authRequest(params, "/v1/positions", "") };
+  auto options = "\"order_id\":" + orderId;
+  unique_json root { authRequest(params, "/v1/order/status", options) };
   double position;
-  if (json_array_size(root.get()) == 0)
+  if (json_string_value(json_object_get(root.get(),"remaining_amount")) == "")
   {
     *params.logFile << "<Bitfinex> WARNING: BTC position not available, return 0.0" << std::endl;
     position = 0.0;
   }
   else
   {
-    position = atof(json_string_value(json_object_get(json_array_get(root.get(), 0), "amount")));
+    position = atof(json_string_value(json_object_get(root.get(), "executed_amount")));
   }
   return position;
 }

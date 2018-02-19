@@ -124,7 +124,18 @@ bool isOrderComplete(Parameters& params, std::string orderId)
   return status && status == std::string("Finished");
 }
 
-double getActivePos(Parameters& params, std::string orderId) { return getAvail(params, "btc"); }
+double getActivePos(Parameters& params, std::string orderId) { 
+  //something like /api/order_status/
+  auto options = "id=" + orderId;
+  unique_json root { authRequest(params, "/api/order_status/", options)};
+  size_t arraySize = json_array_size(root.get());
+  double sum = 0.0;
+  for (int i = 0; i < arraySize; ++i){
+    //Is the key we are looking for btc in their return? we want the executed amount..
+    sum += atof(json_string_value(json_object_get(json_array_get(root.get(), i),"btc")));
+  }
+  return sum; 
+  }
 
 double getLimitPrice(Parameters& params, double volume, bool isBid)
 {

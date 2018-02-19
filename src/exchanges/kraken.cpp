@@ -237,6 +237,7 @@ json_t *authRequest(Parameters &params, std::string request, std::string options
 }
 
 std::string symbolTransform(Parameters& params, std::string currency){
+  std::transform(currency.begin(),currency.end(), currency.begin(), ::toupper);
   if (currency.compare("BTC")==0){
     return "XXBT";
   

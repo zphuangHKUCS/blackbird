@@ -15,8 +15,8 @@
 #include <algorithm>
 
 namespace Cexio {
-
-static json_t* authRequest(Parameters &, std::string, std::string);
+// why is this here...
+//static json_t* authRequest(Parameters &, std::string, std::string);
 
 static RestApi& queryHandle(Parameters &params)
 {
@@ -120,7 +120,12 @@ bool isOrderComplete(Parameters& params, std::string orderId)
   return tmp;
 }
 
-double getActivePos(Parameters& params, std::string orderId) { return getAvail(params, "btc"); }
+double getActivePos(Parameters& params, std::string orderId) { 
+  std::string options = "id="+ orderId;
+  unique_json root { authRequest(params, "/get_order/", options) };
+  double res = atof(json_string_value(json_object_get(root.get(),"amount")));
+  
+  return res; }
 
 double getLimitPrice(Parameters &params, double volume, bool isBid)
 {

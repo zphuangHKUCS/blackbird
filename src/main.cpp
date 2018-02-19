@@ -341,7 +341,6 @@ int main(int argc, char** argv) {
     getActivePos[index] = NullLongExch::getActivePos;
     getLimitPrice[index] = NullLongExch::getLimitPrice;
     dbTableName[index] = "NullLongExch";
-    createTable(dbTableName[index], params);
 
     index++;
   }
@@ -356,7 +355,6 @@ int main(int argc, char** argv) {
     getActivePos[index] = NullShortExch::getActivePos;
     getLimitPrice[index] = NullShortExch::getLimitPrice;
     dbTableName[index] = "NullShortExch";
-    createTable(dbTableName[index], params);
 
     index++;
   }
