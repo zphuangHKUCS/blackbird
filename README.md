@@ -8,6 +8,8 @@
 
 __NOTE THAT THIS BRANCH IS UNSTABLE/A WORK IN PROGRESS PROCEED AT YOUR OWN RISK__
 
+__DO NOT RUN THIS BRANCH WITH OUTSTANDING ORDERS FROM MASTER THEY WILL NOT BE IMPORTED__
+
 The known issues are as follows:
 
 1. Balance calculations for printout are incorrect. This should not effect trading.
