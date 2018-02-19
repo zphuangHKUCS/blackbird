@@ -15,8 +15,7 @@
 #include <algorithm>
 
 namespace Cexio {
-// why is this here...
-//static json_t* authRequest(Parameters &, std::string, std::string);
+static json_t* authRequest(Parameters &, std::string, std::string);
 
 static RestApi& queryHandle(Parameters &params)
 {
