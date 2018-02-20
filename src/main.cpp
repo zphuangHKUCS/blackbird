@@ -346,8 +346,6 @@ int main(int argc, char** argv) {
     isOrderComplete[index] = NullLongExch::isOrderComplete;
     getActivePos[index] = NullLongExch::getActivePos;
     getLimitPrice[index] = NullLongExch::getLimitPrice;
-    dbTableName[index] = "NullLongExch";
-
     index++;
   }
   if (params.nullShortExchEnable)
@@ -360,8 +358,6 @@ int main(int argc, char** argv) {
     isOrderComplete[index] = NullShortExch::isOrderComplete;
     getActivePos[index] = NullShortExch::getActivePos;
     getLimitPrice[index] = NullShortExch::getLimitPrice;
-    dbTableName[index] = "NullShortExch";
-
     index++;
   }
 
