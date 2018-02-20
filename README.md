@@ -27,12 +27,12 @@ In testing this branch, you should make sure to never disable/enable more exchan
 
 You should also note that on this branch, exchanges that do not support BTC/USD instead use BTC/USDT by default.
 
-###Exchanges Implemented on Parallelism Branch
+### Exchanges Implemented on Parallelism Branch
 
 | Exchange | Long | Short | Tested | Note |
 | -------- |:----:|:-----:|:------:| ---- |
 | <a href="https://www.kraken.com" target="_blank">Kraken</a> | ✓ | ✓ | ✓ | Does not display the correct amount of BTC held on margin when starting a sesssion. (does not effect results.) | 
-| <a href="https://www.gdax.com" target="_blank">GDAX</a> | ✓ |  |  | Shorting is not currently supported. |
+| <a href="https://www.gdax.com" target="_blank">GDAX</a> | ✓ |  | ✓ | Shorting is not currently supported. |
 | <a href="https://poloniex.com" target="_blank">Poloniex</a> | ✓ | | ✓ | Shorting is not currently supported. BTC/USDT is used. |
 | <a href="https://bittrex.com" target="_blank">Bittrex</a> | ✓ |  | ✓ | BTC/USD not supported (coming soon.) - BTC/USDT used instead. |
 | <a href="https://binance.com" target="_blank">Binance</a> | ✓ |  | ✓ | BTC/USD not supported - BTC/USDT used instead. |
