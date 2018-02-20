@@ -119,7 +119,7 @@ double getActivePos(Parameters& params, std::string orderId)
   auto options = "\"order_id\":" + orderId;
   unique_json root { authRequest(params, "/v1/order/status", options) };
   double position;
-  if (json_string_value(json_object_get(root.get(),"remaining_amount")) == "")
+  if (json_string_value(json_object_get(root.get(),"remaining_amount"))=="")
   {
     *params.logFile << "<Bitfinex> WARNING: BTC position not available, return 0.0" << std::endl;
     position = 0.0;
