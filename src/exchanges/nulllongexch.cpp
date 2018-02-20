@@ -51,10 +51,7 @@ double getActivePos(Parameters &params, std::string orderId){
 }
 
 double getLimitPrice(Parameters &params, double volume, bool isBid){
-    double atBid = 10000;
-    // pingpong
-    const long double sysTime = time(0);
-    //double atAsk = 9000 + (sysTime - timeStart)*35 + ( 10-1*((double)rand()/(double)RAND_MAX)+1);
+
     double atAsk = 11000;
     return atAsk;
 }
