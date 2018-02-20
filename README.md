@@ -23,7 +23,42 @@ with the orderId of the executed trade and return a double type value which repr
 
 5. There should be more rigorous controls added to handle disable/enabling of exchanges across sessions, or a new exchangeId regime is needed. Currently, if a user enables/disables exchanges at will with open trades from a previous session the exchangeIds will be wrong and erroneous trades could execute. 
 
-In testing this branch, you should make sure to never disable/enable more exchanges if you have a trade outstanding. Adding getActivePos members would be greatly appreciated.
+In testing this branch, you should make sure to never disable/enable more exchanges if you have a trade outstanding. Adding getActivePos members would be greatly appreciated. 
+
+You should also note that on this branch, exchanges that do not support BTC/USD instead use BTC/USDT by default.
+
+###Exchanges Implemented on Parallelism Branch
+
+| Exchange | Long | Short | Tested | Note |
+| -------- |:----:|:-----:|:------:| ---- |
+| <a href="https://www.kraken.com" target="_blank">Kraken</a> | ✓ | ✓ | ✓ | Does not display the correct amount of BTC held on margin when starting a sesssion. (does not effect results.) | 
+| <a href="https://www.gdax.com" target="_blank">GDAX</a> | ✓ |  |  | Shorting is not currently supported. |
+| <a href="https://poloniex.com" target="_blank">Poloniex</a> | ✓ | | ✓ | Shorting is not currently supported. BTC/USDT is used. |
+| <a href="https://bittrex.com" target="_blank">Bittrex</a> | ✓ |  | ✓ | BTC/USD not supported (coming soon.) - BTC/USDT used instead. |
+| <a href="https://binance.com" target="_blank">Binance</a> | ✓ |  | ✓ | BTC/USD not supported - BTC/USDT used instead. |
+
+### Exchanges in need of testing
+
+
+| Exchange | Long | Short | Tested | Note |
+| -------- |:----:|:-----:|:------:| ---- |
+| <a href="https://www.bitfinex.com" target="_blank">Bitfinex</a> | ✓ | ✓ | | The getActivePos member has been added and needs testing with an API Key. |
+| <a href="https://www.bitstamp.net" target="_blank">Bitstamp</a> | ✓ |  | | The getActivePos member has been added and needs testing with an API Key. |
+
+
+### Exchanges in need of getActivePos members
+
+
+| Exchange | Long | Short | Tested | Note |
+| -------- |:----:|:-----:|:------:| ---- |
+| <a href="https://exmo.com" target="_blank">EXMO</a> | ✓ |  | | New exchange from PR <a href="https://github.com/butor/blackbird/pull/336" target="_blank">#336</a>. <b>Might be a <a href="https://bitcointalk.org/index.php?topic=1919799.0" target="_blank">scam</a></b> |
+| <a href="https://www.quadrigacx.com" target="_blank">QuadrigaCX</a> | ✓ |  |  |
+| <a href="https://gemini.com" target="_blank">Gemini</a> | ✓ |  | | |
+| <a href="https://www.okcoin.com" target="_blank">OKCoin</a> | ✓ |  | |their API now offers short selling: <a href="https://www.okcoin.com/about/rest_api.do" target="_blank">link here</a> |
+| <a href="https://cex.io/" target="_blank">CEX.IO</a> | ✓ | ✓ | | |
+| <a href="https://btc-e.com" target="_blank">BTC-e</a> | ✓ |  |  |
+| <a href="https://www.itbit.com" target="_blank">itBit</a> | ✓ |  |  |
+
 
 ### Introduction
 
