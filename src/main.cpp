@@ -864,23 +864,8 @@ int main(int argc, char** argv) {
           logFile << std::setprecision(6)
           << balance[tradeVec[i].idExchShort].leg1After << " " << params.leg1 << "\n";
           logFile << std:: endl;
-          /*old way
-          for (int i = 0; i < numExch; ++i)
-          {
-            balance[i].leg2After = getAvail[i](params, params.leg2.c_str()); // FIXME: currency hard-coded
-            balance[i].leg1After = getAvail[i](params, params.leg1.c_str()); // FIXME: currency hard-coded
-          }*/
-          /* old way
-          for (int i = 0; i < numExch; ++i)
-          {
-            logFile << "New balance on " << params.exchName[i] << ":  \t";
-            logFile.precision(2);
-            logFile << balance[i].leg2After << " " << params.leg2 << " (perf " << balance[i].leg2After - balance[i].leg2 << "), ";
-            logFile << std::setprecision(6) << balance[i].leg1After << " " << params.leg1 << "\n";
-          }
-          logFile << std::endl; */
-          // Update total leg2 balance
-          //tradeVec[i].leg2TotBalanceBefore += balance[tradeVec[i].idExchShort]
+
+
           // update the tradeVec for the balance after the trade for performance
           tradeVec[i].leg2TotBalanceAfter = balance[tradeVec[i].idExchLong].leg2After + balance[tradeVec[i].idExchShort].leg2After;
           // update currency balances
@@ -888,17 +873,6 @@ int main(int argc, char** argv) {
           balance[tradeVec[i].idExchLong].leg2 = balance[tradeVec[i].idExchLong].leg2After;
           balance[tradeVec[i].idExchShort].leg1 = balance[tradeVec[i].idExchShort].leg1After;
           balance[tradeVec[i].idExchShort].leg2 = balance[tradeVec[i].idExchShort].leg2After;
-          /*for (int i = 0; i < numExch; ++i)
-          {
-            tradeVec[i].leg2TotBalanceBefore += balance[i].leg2;
-            tradeVec[i].leg2TotBalanceAfter += balance[i].leg2After;
-          }*/
-          // Update current balances
-          /*for (int i = 0; i < numExch; ++i)
-          {
-            balance[i].leg2 = balance[i].leg2After;
-            balance[i].leg1 = balance[i].leg1After;
-          }*/
 
           // Prints the result in the result CSV file
           logFile.precision(2);
