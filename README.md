@@ -49,13 +49,13 @@ You should also note that on this branch, exchanges that do not support BTC/USD 
 | <a href="https://gemini.com" target="_blank">Gemini</a> | ✓ |  | | |
 | <a href="https://cex.io/" target="_blank">CEX.IO</a> | ✓ | ✓ | | |
 | <a href="https://btc-e.com" target="_blank">BTC-e</a> | ✓ |  |  |
+| <a href="https://www.okcoin.com" target="_blank">OKCoin</a> | ✓ |  | |their API now offers short selling: <a href="https://www.okcoin.com/about/rest_api.do" target="_blank">link here</a> |
 
 ### Exchanges in need of getActivePos members
 
 
 | Exchange | Long | Short | Tested | Note |
 | -------- |:----:|:-----:|:------:| ---- |
-| <a href="https://www.okcoin.com" target="_blank">OKCoin</a> | ✓ |  | |their API now offers short selling: <a href="https://www.okcoin.com/about/rest_api.do" target="_blank">link here</a> |
 | <a href="https://www.itbit.com" target="_blank">itBit</a> | ✓ |  | Itbit is not implemented. |
 
 
