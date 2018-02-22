@@ -115,7 +115,22 @@ bool isOrderComplete(Parameters& params, std::string orderId)
 }
 
 double getActivePos(Parameters& params, std::string orderId) { 
-  return getAvail(params, "btc"); }
+  if (orderId == "0") return 0.0;
+
+  // signature
+  std::ostringstream oss;
+  oss << "api_key=" << params.okcoinApi << "&order_id=" << orderId << "&symbol=btc_usd" << "&secret_key=" << params.okcoinSecret;
+  std::string signature = oss.str();
+  oss.clear();
+  oss.str("");
+  // content
+  oss << "api_key=" << params.okcoinApi << "&order_id=" << orderId << "&symbol=btc_usd";
+  std::string content = oss.str();
+  unique_json root { authRequest(params, "https://www.okcoin.com/api/v1/order_info.do", signature, content) };
+  auto activeAmt = json_number_value(json_object_get(json_array_get(json_object_get(root.get(), "orders"), 0), "deal_amount"));
+
+
+  return activeAmt; }
 
 double getLimitPrice(Parameters& params, double volume, bool isBid)
 {
