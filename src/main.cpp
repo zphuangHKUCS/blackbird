@@ -346,6 +346,7 @@ int main(int argc, char** argv) {
     isOrderComplete[index] = NullLongExch::isOrderComplete;
     getActivePos[index] = NullLongExch::getActivePos;
     getLimitPrice[index] = NullLongExch::getLimitPrice;
+    createTable(dbTableName[index], params);
     index++;
   }
   if (params.nullShortExchEnable)
@@ -358,6 +359,7 @@ int main(int argc, char** argv) {
     isOrderComplete[index] = NullShortExch::isOrderComplete;
     getActivePos[index] = NullShortExch::getActivePos;
     getLimitPrice[index] = NullShortExch::getLimitPrice;
+    createTable(dbTableName[index], params);
     index++;
   }
 
@@ -839,13 +841,12 @@ int main(int argc, char** argv) {
           }
           logFile << "Done\n"
                   << std::endl;
-          //we calculate the new balances, we really already knew idExchLong leg1 and idExchShort leg2 exposure (as they are the same as volume)
-          balance[tradeVec[i].idExchLong].leg1After = getAvail[tradeVec[i].idExchLong](params,params.leg1.c_str());
+          //we calculate the new balances
+          balance[tradeVec[i].idExchLong].leg1After = getAvail[tradeVec[i].idExchLong](params, params.leg1.c_str());
           balance[tradeVec[i].idExchLong].leg2After = getAvail[tradeVec[i].idExchLong](params, params.leg2.c_str());
           balance[tradeVec[i].idExchShort].leg1After = getAvail[tradeVec[i].idExchShort](params, params.leg1.c_str());
           balance[tradeVec[i].idExchShort].leg2After = getAvail[tradeVec[i].idExchShort](params, params.leg2.c_str());
-  
-          // this is broken and wrong
+          // print the new balances
           logFile << "New balance on " << tradeVec[i].exchNameLong << ":  \t";
           logFile.precision(2);
           logFile << balance[tradeVec[i].idExchLong].leg2After << " " << params.leg2 << " (perf " 
@@ -861,10 +862,11 @@ int main(int argc, char** argv) {
           << balance[tradeVec[i].idExchShort].leg1After << " " << params.leg1 << "\n";
           logFile << std:: endl;
 
-
+          // get the total balances of the relevant exchanges before exit trade was executed
+          tradeVec[i].leg2TotBalanceBefore = balance[tradeVec[i].idExchLong].leg2 + balance[tradeVec[i].idExchShort].leg2;
           // update the tradeVec for the balance after the trade for performance
           tradeVec[i].leg2TotBalanceAfter = balance[tradeVec[i].idExchLong].leg2After + balance[tradeVec[i].idExchShort].leg2After;
-          // update currency balances
+          // update current balances
           balance[tradeVec[i].idExchLong].leg1 = balance[tradeVec[i].idExchLong].leg1After;
           balance[tradeVec[i].idExchLong].leg2 = balance[tradeVec[i].idExchLong].leg2After;
           balance[tradeVec[i].idExchShort].leg1 = balance[tradeVec[i].idExchShort].leg1After;
@@ -888,7 +890,6 @@ int main(int argc, char** argv) {
           // Sends an email with the result of the trade
           if (params.sendEmail)
           {
-            // TODO: Fix
             sendEmail(tradeVec[i], params);
             logFile << "Email sent" << std::endl;
           }

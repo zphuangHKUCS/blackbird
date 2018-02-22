@@ -36,7 +36,6 @@ double getActivePos(Parameters &params, std::string orderId){
 
 double getLimitPrice(Parameters &params, double volume, bool isBid){
     double atBid = 10000;
-    double atAsk = atBid +100;
     return atBid;
 }
 

@@ -33,14 +33,14 @@ quote_t getQuote(Parameters &params){
 
 double getAvail(Parameters &params, std::string currency) {
     double availBal = 0;
-    symbolTransform(params, currency);
+    currency = symbolTransform(params, currency);
     // do a real avail bal curl
 
     if (currency.compare("XXBT")==0){
-        availBal = 1000;
+        availBal = 0;
         return availBal;
     } else if (currency.compare("ZUSD")==0){
-        availBal = 0.0;
+        availBal = 1000.0;
     }
     return availBal;
 }
@@ -51,9 +51,20 @@ double getActivePos(Parameters &params, std::string orderId){
 }
 
 double getLimitPrice(Parameters &params, double volume, bool isBid){
-
-    double atAsk = 11000;
-    return atAsk;
+    const long double sysTime = time(0);
+    double timeElapsed = sysTime - timeStart;
+    // start at 9000 (buy at 9000, sell at 10000 in NullShortExch)
+    double bidValue = 9000;
+    // climb to 11,000 with a little randomness
+    if (0 < timeElapsed){
+        bidValue = bidValue + ( 200-100*((double)rand()/(double)RAND_MAX)+100); 
+    }
+    if (60 <= timeElapsed){
+        // a minute has gone by, reset timeValue
+        bidValue = 11000 - (200-100*((double)rand()/(double)RAND_MAX)+100);
+    }
+    // pingpong between 9000 and 11000 with a bit of randomness
+    return bidValue;
 }
 
 std::string sendLongOrder(Parameters &params, std::string direction, double quantity, double price){
