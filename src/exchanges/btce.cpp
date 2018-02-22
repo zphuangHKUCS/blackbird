@@ -90,9 +90,7 @@ bool isOrderComplete(Parameters& params, std::string orderId)
 
 double getActivePos(Parameters& params, std::string orderId)
 {
-  // TODO:
-  // this implementation is more of a placeholder copied from other exchanges;
-  // may not be reliable.
+
   std::string options = "order_id=";
   options += orderId;
   double activeAmt = 0.0;
