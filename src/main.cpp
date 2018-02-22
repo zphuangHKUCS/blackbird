@@ -66,7 +66,7 @@ int main(int argc, char** argv) {
   // Replaces the C++ global locale with the user-preferred locale
   std::locale mylocale("");
   // Loads all the parameters
-  Parameters params("test.conf");
+  Parameters params("blackbird.conf");
   // Does some verifications about the parameters
   if (!params.demoMode) {
     if (!params.useFullExposure) {
@@ -346,6 +346,7 @@ int main(int argc, char** argv) {
     isOrderComplete[index] = NullLongExch::isOrderComplete;
     getActivePos[index] = NullLongExch::getActivePos;
     getLimitPrice[index] = NullLongExch::getLimitPrice;
+    createTable(dbTableName[index], params);
     index++;
   }
   if (params.nullShortExchEnable)
@@ -358,6 +359,7 @@ int main(int argc, char** argv) {
     isOrderComplete[index] = NullShortExch::isOrderComplete;
     getActivePos[index] = NullShortExch::getActivePos;
     getLimitPrice[index] = NullShortExch::getLimitPrice;
+    createTable(dbTableName[index], params);
     index++;
   }
 
@@ -861,10 +863,11 @@ int main(int argc, char** argv) {
           << balance[tradeVec[i].idExchShort].leg1After << " " << params.leg1 << "\n";
           logFile << std:: endl;
 
-
+          // get the balances of the relevant exchanges before the exit trade was  executed
+          tradeVec[i].leg2TotBalanceBefore = balance[tradeVec[i].idExchLong].leg2 + balance[tradeVec[i].idExchShort].leg2;
           // update the tradeVec for the balance after the trade for performance
           tradeVec[i].leg2TotBalanceAfter = balance[tradeVec[i].idExchLong].leg2After + balance[tradeVec[i].idExchShort].leg2After;
-          // update currency balances
+          // update current balances
           balance[tradeVec[i].idExchLong].leg1 = balance[tradeVec[i].idExchLong].leg1After;
           balance[tradeVec[i].idExchLong].leg2 = balance[tradeVec[i].idExchLong].leg2After;
           balance[tradeVec[i].idExchShort].leg1 = balance[tradeVec[i].idExchShort].leg1After;
