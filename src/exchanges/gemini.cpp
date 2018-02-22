@@ -92,7 +92,13 @@ bool isOrderComplete(Parameters& params, std::string orderId) {
 }
 
 double getActivePos(Parameters& params, std::string orderId) {
-  return getAvail(params, "btc");
+  double activePos = 0.0;
+  auto options = "\"order_id\":" + orderId;
+  unique_json root { authRequest(params, "https://api.gemini.com/v1/order/status","order/status", options) };
+  const char * res = json_string_value(json_object_get(root.get(),"executed_amount"));
+  activePos = res ? atof(res) : 0.0;
+  
+  return activePos;
 }
 
 double getLimitPrice(Parameters& params, double volume, bool isBid)

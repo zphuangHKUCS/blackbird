@@ -116,7 +116,18 @@ bool isOrderComplete(Parameters& params, std::string orderId)
 }
 
 double getActivePos(Parameters& params, std::string orderId) {
-  return getAvail(params, "btc");
+  
+  unique_json options {json_object()};
+
+  json_object_set_new(options.get(), "id" , json_string(orderId.c_str()));
+
+  unique_json root { authRequest(params, "/v2/lookup_order", options.get()) };
+
+  double activeAmt = 0.0;
+  const char * avail_str = json_string_value(json_object_get(json_array_get(root.get(),0),"amount"));
+  activeAmt = avail_str ? atof(avail_str) : 0.0;
+
+  return activeAmt;
 }
 
 

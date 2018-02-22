@@ -10,6 +10,7 @@
 #include <iomanip>
 #include <array>
 #include <chrono>
+#include <algorithm>
 
 namespace Exmo {
 // Forward declarations
@@ -114,7 +115,16 @@ bool isOrderComplete(Parameters& params, std::string orderId) {
 
 
 double getActivePos(Parameters& params, std::string orderId) {
-  return getAvail(params, "btc");
+  std::string options = "order_id=";
+  options += orderId;
+  unique_json root { authRequest(params,"/user_order_trades",options)};
+  double activeSize = 0.0;
+  auto arrSize = json_array_size(json_object_get(root.get(),"trades"));
+  auto res = json_object_get(root.get(),"trades");
+  for (size_t i = 0; i < arrSize; i++){
+    activeSize += json_number_value(json_object_get(json_array_get(res,i),"quantity"));
+  }
+  return activeSize;
 }
 
 

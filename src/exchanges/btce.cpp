@@ -90,10 +90,13 @@ bool isOrderComplete(Parameters& params, std::string orderId)
 
 double getActivePos(Parameters& params, std::string orderId)
 {
-  // TODO:
-  // this implementation is more of a placeholder copied from other exchanges;
-  // may not be reliable.
-  return getAvail(params, "btc");
+
+  std::string options = "order_id=";
+  options += orderId;
+  double activeAmt = 0.0;
+  unique_json root { authRequest(params, "OrderInfo", options) };
+  activeAmt = json_number_value(json_object_get(json_object_get(root.get(),orderId.c_str()),"amount"));
+  return activeAmt;
 }
 
 double getLimitPrice(Parameters& params, double volume, bool isBid)
