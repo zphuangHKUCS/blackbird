@@ -47,6 +47,7 @@ You should also note that on this branch, exchanges that do not support BTC/USD 
 | <a href="https://exmo.com" target="_blank">EXMO</a> | ✓ |  | | New exchange from PR <a href="https://github.com/butor/blackbird/pull/336" target="_blank">#336</a>. <b>Might be a <a href="https://bitcointalk.org/index.php?topic=1919799.0" target="_blank">scam</a></b> |
 | <a href="https://www.quadrigacx.com" target="_blank">QuadrigaCX</a> | ✓ |  |  |
 | <a href="https://gemini.com" target="_blank">Gemini</a> | ✓ |  | | |
+| <a href="https://cex.io/" target="_blank">CEX.IO</a> | ✓ | ✓ | | |
 
 ### Exchanges in need of getActivePos members
 
