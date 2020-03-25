@@ -6,7 +6,8 @@ int main(int argc, char** argv)
 {
     std::cout << "Hello World" << std::endl;
     BitfinexLogger bitfinexLogger;
-    std::cout << bitfinexLogger.getQuote().bid << '\t' << bitfinexLogger.getQuote().ask << std::endl;
+    Parameters params("blackbird.conf");
+    std::cout << bitfinexLogger.getQuote(params).bid << '\t' << bitfinexLogger.getQuote(params).ask << std::endl;
     bitfinexLogger.logQuote();
     return 0;
 }
