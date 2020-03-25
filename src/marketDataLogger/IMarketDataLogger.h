@@ -7,5 +7,5 @@ struct Parameters;
 class IMarketDataLogger
 {
     virtual quote_t getQuote(Parameters& params) = 0;
-    virtual logQuote() = 0;
+    virtual void logQuote() = 0;
 };
