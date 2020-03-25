@@ -13,7 +13,8 @@ find_package(SQLite3)
 file(GLOB SOURCES
     src/*.cpp
     src/exchanges/*.cpp
-    src/utils/*.cpp)
+    src/utils/*.cpp
+    src/marketDataLogger/*.cpp)
 add_executable(${PROJECT_NAME} ${SOURCES})
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR

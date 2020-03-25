@@ -56,7 +56,7 @@ struct Balance {
 
 // 'main' function.
 // Blackbird doesn't require any arguments for now.
-int main(int argc, char** argv) {
+int blackbirdMain(int argc, char** argv) {
   std::cout << "Blackbird Bitcoin Arbitrage" << std::endl;
   std::cout << "DISCLAIMER: USE THE SOFTWARE AT YOUR OWN RISK\n" << std::endl;
   // Replaces the C++ global locale with the user-preferred locale
