@@ -5,8 +5,8 @@
 class BitfinexLogger : public IMarketDataLogger
 {
 public: // from IMarketDataLogger
-    virtual quote_t getQuote(Parameters& params) = 0;
-    virtual void logQuote() = 0;
+    virtual quote_t getQuote(Parameters& params);
+    virtual void logQuote();
 
 public:
     BitfinexLogger() = default;
