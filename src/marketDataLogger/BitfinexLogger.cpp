@@ -8,7 +8,7 @@ quote_t BitfinexLogger::getQuote(Parameters& params)
     return Bitfinex::getQuote(params);
 }
 
-void BitfinexLogger::log()
+void BitfinexLogger::logQuote()
 {
     std::cout << "BitfinexLogger::log()" << std::endl;
 }
